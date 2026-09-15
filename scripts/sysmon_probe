@@ -1,0 +1,207 @@
+#!/bin/bash
+
+# omarchy:summary=Emit one JSON snapshot of CPU, RAM, GPU and disk usage
+# omarchy:hidden=true
+#
+# Alimenta a aba System do kevin.hub. Rede fica de fora de propósito: o painel de
+# Network do Omarchy já cobre isso.
+#
+# REGRA DA dGPU: nvidia-smi só com runtime_status == active.
+#
+# O driver proprietário não expõe hwmon nem gpu_busy_percent em sysfs, então uso,
+# temperatura e VRAM da NVIDIA só saem por NVML (nvidia-smi). Só que cada query
+# dele acorda o chip para P0/1702MHz -- o sys-summary.sh da waybar antiga fazia
+# isso a cada 1s, e era o próprio monitor que mantinha a GPU acordada.
+#
+# Com o chip já ligado a consulta não o tira do sono, então ela é permitida. Em
+# "suspended" a GPU está sem energia: não há uso nem temperatura para ler, e
+# consultar seria exatamente o que a acordaria. Aí ficam só os contadores de
+# runtime PM (runtime_active_time / runtime_suspended_time), que não a perturbam.
+
+set -uo pipefail
+
+state_dir="${XDG_RUNTIME_DIR:-/tmp}/omarchy-sysmon"
+mkdir -p "$state_dir"
+
+# ---------------------------------------------------------------- CPU
+read_cpu_sample() {
+  awk '$1 == "cpu" { total = $2+$3+$4+$5+$6+$7+$8+$9; idle = $5+$6; print total, idle; exit }' /proc/stat
+}
+
+cpu_percent=0
+cpu_state="$state_dir/cpu"
+now_sample=$(read_cpu_sample)
+if [[ -r $cpu_state ]]; then
+  prev_sample=$(<"$cpu_state")
+  cpu_percent=$(awk -v p="$prev_sample" -v n="$now_sample" 'BEGIN {
+    split(p, a, " "); split(n, b, " ")
+    dt = b[1] - a[1]; di = b[2] - a[2]
+    if (dt > 0) printf "%d", 100 * (dt - di) / dt; else print 0
+  }')
+else
+  # Primeira execução: não há janela anterior, então tira uma amostra curta em
+  # vez de reportar 0.
+  sleep 0.15
+  later=$(read_cpu_sample)
+  cpu_percent=$(awk -v p="$now_sample" -v n="$later" 'BEGIN {
+    split(p, a, " "); split(n, b, " ")
+    dt = b[1] - a[1]; di = b[2] - a[2]
+    if (dt > 0) printf "%d", 100 * (dt - di) / dt; else print 0
+  }')
+  now_sample=$later
+fi
+printf '%s\n' "$now_sample" >"$cpu_state"
+
+cpu_temp=0
+for hwmon in /sys/class/hwmon/hwmon*; do
+  case "$(cat "$hwmon/name" 2>/dev/null)" in
+    k10temp | coretemp)
+      raw=$(cat "$hwmon/temp1_input" 2>/dev/null)
+      [[ -n ${raw:-} ]] && cpu_temp=$(awk -v v="$raw" 'BEGIN { printf "%.1f", v / 1000 }')
+      break
+      ;;
+  esac
+done
+
+cpu_cores=$(nproc 2>/dev/null || echo 0)
+
+# ---------------------------------------------------------------- RAM
+read -r mem_total mem_available < <(awk '
+  /^MemTotal:/ { total = $2 }
+  /^MemAvailable:/ { available = $2 }
+  END { print total, available }
+' /proc/meminfo)
+mem_used=$((mem_total - mem_available))
+mem_percent=$((mem_total > 0 ? 100 * mem_used / mem_total : 0))
+
+read -r swap_total swap_free < <(awk '
+  /^SwapTotal:/ { total = $2 }
+  /^SwapFree:/ { free = $2 }
+  END { print total, free }
+' /proc/meminfo)
+swap_used=$((swap_total - swap_free))
+swap_percent=$((swap_total > 0 ? 100 * swap_used / swap_total : 0))
+
+# ---------------------------------------------------------------- iGPU (AMD)
+igpu_present=false
+igpu_busy=0
+igpu_temp=0
+igpu_watts=0
+igpu_vram_used=0
+igpu_vram_total=0
+igpu_mhz=0
+
+for card in /sys/class/drm/card*/device; do
+  [[ -r $card/gpu_busy_percent ]] || continue
+  igpu_present=true
+  igpu_busy=$(cat "$card/gpu_busy_percent" 2>/dev/null || echo 0)
+  used=$(cat "$card/mem_info_vram_used" 2>/dev/null || echo 0)
+  total=$(cat "$card/mem_info_vram_total" 2>/dev/null || echo 0)
+  igpu_vram_used=$((used / 1048576))
+  igpu_vram_total=$((total / 1048576))
+  for hwmon in "$card"/hwmon/hwmon*; do
+    raw=$(cat "$hwmon/temp1_input" 2>/dev/null)
+    [[ -n ${raw:-} ]] && igpu_temp=$(awk -v v="$raw" 'BEGIN { printf "%.1f", v / 1000 }')
+    raw=$(cat "$hwmon/power1_input" 2>/dev/null)
+    [[ -n ${raw:-} ]] && igpu_watts=$(awk -v v="$raw" 'BEGIN { printf "%.1f", v / 1000000 }')
+    raw=$(cat "$hwmon/freq1_input" 2>/dev/null)
+    [[ -n ${raw:-} ]] && igpu_mhz=$(awk -v v="$raw" 'BEGIN { printf "%d", v / 1000000 }')
+    break
+  done
+  break
+done
+
+# ---------------------------------------------------------------- dGPU (NVIDIA)
+# Só contadores de runtime PM. "asleep" aqui significa D3cold de verdade.
+dgpu_present=false
+dgpu_status="absent"
+dgpu_active_percent=0
+dgpu_power_state=""
+dgpu_detailed=false
+dgpu_busy=0
+dgpu_vram_used=0
+dgpu_vram_total=0
+dgpu_temp=0
+dgpu_watts=0
+dgpu_mhz=0
+
+for dev in /sys/bus/pci/devices/*; do
+  vendor=$(cat "$dev/vendor" 2>/dev/null)
+  class=$(cat "$dev/class" 2>/dev/null)
+  [[ $vendor == "0x10de" && $class == 0x0300* ]] || continue
+
+  dgpu_present=true
+  dgpu_status=$(cat "$dev/power/runtime_status" 2>/dev/null || echo unknown)
+
+  active_ms=$(cat "$dev/power/runtime_active_time" 2>/dev/null || echo 0)
+  now_ms=$(awk '{ printf "%d", $1 * 1000 }' /proc/uptime)
+  dgpu_state="$state_dir/dgpu"
+
+  if [[ -r $dgpu_state ]]; then
+    read -r prev_active prev_now <"$dgpu_state"
+    dgpu_active_percent=$(awk -v pa="$prev_active" -v pn="$prev_now" -v a="$active_ms" -v n="$now_ms" 'BEGIN {
+      dw = n - pn
+      da = a - pa
+      if (dw <= 0) { print 0; exit }
+      pct = 100 * da / dw
+      if (pct < 0) pct = 0
+      if (pct > 100) pct = 100
+      printf "%d", pct
+    }')
+  fi
+  printf '%s %s\n' "$active_ms" "$now_ms" >"$dgpu_state"
+
+  dgpu_power_state=$(cat "$dev/power_state" 2>/dev/null || echo "")
+
+  # Utilização, temperatura e VRAM da NVIDIA só existem via NVML (nvidia-smi):
+  # o driver proprietário não expõe hwmon nem gpu_busy_percent em sysfs.
+  #
+  # A consulta só acontece com runtime_status == active, ou seja, com o chip já
+  # ligado -- aí ela não o tira do sono. Em "suspended" a GPU está SEM energia e
+  # não há o que ler: consultar seria justamente o que a acordaria.
+  if [[ $dgpu_status == "active" ]] && command -v nvidia-smi >/dev/null 2>&1; then
+    # Uma consulta já em curso pode demorar; não empilhar outra.
+    if ! pgrep -x nvidia-smi >/dev/null 2>&1; then
+      smi=$(timeout -k 1 2 nvidia-smi \
+        --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,clocks.sm \
+        --format=csv,noheader,nounits 2>/dev/null | head -n1)
+      if [[ -n ${smi:-} ]]; then
+        IFS=',' read -r smi_busy smi_used smi_total smi_temp smi_watts smi_mhz <<<"$smi"
+        dgpu_busy=$(tr -dc '0-9' <<<"$smi_busy")
+        dgpu_vram_used=$(tr -dc '0-9' <<<"$smi_used")
+        dgpu_vram_total=$(tr -dc '0-9' <<<"$smi_total")
+        dgpu_temp=$(tr -dc '0-9.' <<<"$smi_temp")
+        dgpu_watts=$(tr -dc '0-9.' <<<"$smi_watts")
+        dgpu_mhz=$(tr -dc '0-9' <<<"$smi_mhz")
+        dgpu_detailed=true
+      fi
+    fi
+  fi
+  break
+done
+
+# ---------------------------------------------------------------- Discos
+disks_json=$(
+  for entry in "Root:/" "Home:/home"; do
+    label="${entry%%:*}"
+    mount="${entry#*:}"
+    mountpoint -q "$mount" 2>/dev/null || [[ $mount == "/" ]] || continue
+    df -B1 --output=used,size "$mount" 2>/dev/null | awk -v label="$label" -v mount="$mount" '
+      NR == 2 {
+        pct = ($2 > 0) ? int(100 * $1 / $2) : 0
+        printf "{\"label\":\"%s\",\"mount\":\"%s\",\"used\":%d,\"total\":%d,\"percent\":%d}\n", label, mount, $1, $2, pct
+      }'
+  done | paste -sd,
+)
+
+# ---------------------------------------------------------------- Saída
+cat <<JSON
+{
+  "cpu": {"percent": ${cpu_percent:-0}, "temp": ${cpu_temp:-0}, "cores": ${cpu_cores:-0}},
+  "ram": {"usedKb": $mem_used, "totalKb": $mem_total, "percent": $mem_percent},
+  "swap": {"usedKb": $swap_used, "totalKb": $swap_total, "percent": $swap_percent},
+  "igpu": {"present": $igpu_present, "busy": ${igpu_busy:-0}, "temp": ${igpu_temp:-0}, "watts": ${igpu_watts:-0}, "vramUsedMi": $igpu_vram_used, "vramTotalMi": $igpu_vram_total, "mhz": ${igpu_mhz:-0}},
+  "dgpu": {"present": $dgpu_present, "status": "$dgpu_status", "powerState": "$dgpu_power_state", "activePercent": ${dgpu_active_percent:-0}, "detailed": $dgpu_detailed, "busy": ${dgpu_busy:-0}, "temp": ${dgpu_temp:-0}, "watts": ${dgpu_watts:-0}, "vramUsedMi": ${dgpu_vram_used:-0}, "vramTotalMi": ${dgpu_vram_total:-0}, "mhz": ${dgpu_mhz:-0}},
+  "disks": [${disks_json:-}]
+}
+JSON
