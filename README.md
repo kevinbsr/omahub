@@ -2,7 +2,7 @@
 
 A keyboard-first command center for Omarchy. One themed bar widget opens a
 single panel for calendar, media, weather, screen time, phone controls, nearby
-sharing and system monitoring.
+sharing, Android mirroring and system monitoring.
 
 The Hub follows the active Omarchy theme for color, typography, borders,
 spacing and corner radius. It keeps the original shell's compact, practical
@@ -15,6 +15,7 @@ character while bringing related controls into one consistent surface.
 - Open-Meteo weather with rain, UV, sunrise, sunset and a three-day forecast.
 - Screen-time history, comparison, weekly trend and app breakdown.
 - KDE Connect phone actions and LocalSend-compatible nearby sharing.
+- Android device mirroring (adb/scrcpy) inline on the Phone page.
 - Sleep-aware CPU, memory, GPU and storage monitoring with a btop shortcut.
 - Mouse and keyboard navigation across all seven pages.
 
@@ -25,9 +26,10 @@ character while bringing related controls into one consistent surface.
 - `curl`, `python3`, `wl-clipboard` and `btop`; these are present on a normal
   Omarchy installation or available from Arch repositories.
 
-Screen Time, Phone and Nearby are optional integrations. Their tabs explain
-what is missing and provide a setup action when the corresponding plugin is
-installed.
+Screen Time, Phone, Nearby and Android Mirror are optional integrations.
+Their tabs explain what is missing and provide a setup action when the
+corresponding plugin is installed. Android Mirror also needs `adb` and
+`scrcpy` on the host, installed by its own plugin.
 
 ## Install
 
@@ -40,6 +42,7 @@ Install the optional engines from their upstream projects:
 ```bash
 omarchy plugin add https://github.com/ax1g/quickshell-screentime-plugin.git --enable --yes
 omarchy plugin add https://github.com/jitendradara12/omaconnect.git --enable --yes
+omarchy plugin add https://github.com/ayandexyz/omarchy-android-mirror.git --enable --yes
 ```
 
 Nearby uses its own release installer because it includes a versioned helper:
@@ -53,6 +56,31 @@ bash /tmp/omarchy-nearby-install.sh
 Open each integration tab in the Hub and choose its setup action. The Hub
 moves that plugin's settings into its own entry and disables the duplicate bar
 widget or service while retaining existing history, pairing and identity data.
+
+Android Mirror ships with no `service` entry point of its own, since its
+Panel.qml was never meant to be hosted elsewhere. The Hub's setup action adds
+one to that plugin's own `manifest.json` the first time it is enabled; see
+`android-mirror/VENDORED.md` for the exact patch and why it is needed.
+
+## Remove
+
+```bash
+omarchy plugin remove kevinbsr.omahub
+```
+
+Any integration the Hub had absorbed (Screen Time, Phone, Nearby, Android
+Mirror) stays installed but disabled — its own bar widget or service does not
+come back on its own. Re-enable the ones you still want:
+
+```bash
+omarchy plugin enable agx.screen-time
+omarchy plugin enable omaconnect
+omarchy plugin enable oma.nearby
+omarchy plugin enable io.github.ayan-de.android-mirror
+```
+
+Each keeps the history, pairing and identity data it had before the Hub
+took it over.
 
 ## Project layout
 
