@@ -1,7 +1,7 @@
 import QtQuick
 import qs.Commons
 import qs.Ui
-import ".." // IntegrationSetup lives in kevin.hub's own root, one level up
+import ".." // IntegrationSetup lives in kevinbsr.omahub's own root, one level up
 import "AndroidMirrorModel.js" as MirrorModel
 
 // A compact device list + mirror button for the Phone tab, under omaconnect.

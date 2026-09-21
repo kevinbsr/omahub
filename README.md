@@ -1,8 +1,8 @@
-# Kevin Hub
+# OmaHub
 
 A keyboard-first command center for Omarchy. One themed bar widget opens a
 single panel for calendar, media, weather, screen time, phone controls, nearby
-sharing, Android mirroring and system monitoring.
+sharing and system monitoring.
 
 The Hub follows the active Omarchy theme for color, typography, borders,
 spacing and corner radius. It keeps the original shell's compact, practical
@@ -15,7 +15,6 @@ character while bringing related controls into one consistent surface.
 - Open-Meteo weather with rain, UV, sunrise, sunset and a three-day forecast.
 - Screen-time history, comparison, weekly trend and app breakdown.
 - KDE Connect phone actions and LocalSend-compatible nearby sharing.
-- Android device mirroring (adb/scrcpy) inline on the Phone page.
 - Sleep-aware CPU, memory, GPU and storage monitoring with a btop shortcut.
 - Mouse and keyboard navigation across all seven pages.
 
@@ -26,15 +25,14 @@ character while bringing related controls into one consistent surface.
 - `curl`, `python3`, `wl-clipboard` and `btop`; these are present on a normal
   Omarchy installation or available from Arch repositories.
 
-Screen Time, Phone, Nearby and Android Mirror are optional integrations.
-Their tabs explain what is missing and provide a setup action when the
-corresponding plugin is installed. Android Mirror also needs `adb` and
-`scrcpy` on the host, installed by its own plugin.
+Screen Time, Phone and Nearby are optional integrations. Their tabs explain
+what is missing and provide a setup action when the corresponding plugin is
+installed.
 
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/kevinbsr/kevin-hub.git --enable --yes
+omarchy plugin add https://github.com/kevinbsr/omahub.git --enable --yes
 ```
 
 Install the optional engines from their upstream projects:
@@ -42,7 +40,6 @@ Install the optional engines from their upstream projects:
 ```bash
 omarchy plugin add https://github.com/ax1g/quickshell-screentime-plugin.git --enable --yes
 omarchy plugin add https://github.com/jitendradara12/omaconnect.git --enable --yes
-omarchy plugin add https://github.com/ayandexyz/omarchy-android-mirror.git --enable --yes
 ```
 
 Nearby uses its own release installer because it includes a versioned helper:
@@ -56,11 +53,6 @@ bash /tmp/omarchy-nearby-install.sh
 Open each integration tab in the Hub and choose its setup action. The Hub
 moves that plugin's settings into its own entry and disables the duplicate bar
 widget or service while retaining existing history, pairing and identity data.
-
-Android Mirror ships with no `service` entry point of its own, since its
-Panel.qml was never meant to be hosted elsewhere. The Hub's setup action adds
-one locally to that plugin's `manifest.json` the first time it is enabled;
-see `android-mirror/VENDORED.md` for the exact patch and why it is needed.
 
 ## Project layout
 
@@ -78,7 +70,7 @@ NearbyTab.qml      nearby page   (oma.nearby's Panel.qml, view half)
 NearbyModel.js     transfer formatting, from oma.nearby
 SystemTab.qml      system page   (CPU, memory, GPU and storage)
 scripts/sysmon_probe local, sleep-aware system data collector
-Service.qml        shared panel/MPRIS service; owns `kevin.hub` and `kevin.hub.media`
+Service.qml        shared panel/MPRIS service; owns `kevinbsr.omahub` and `kevinbsr.omahub.media`
 ClockModel.js      date maths, from omarchy.clock
 MediaModel.js      player ranking helpers, from omarchy.media
 WeatherModel.js    wttr/open-meteo parsing, from omarchy.weather
@@ -141,7 +133,7 @@ in mind on any resync.
 
 `Service.qml` is the shared engine used by the Hub's media page and bar
 controls. The shell keeps ownership of its built-in `media` IPC target, while
-the Hub exposes its source-aware controls through `kevin.hub.media`; this
+the Hub exposes its source-aware controls through `kevinbsr.omahub.media`; this
 avoids an ambiguous handler when both services are loaded.
 
 `HubIntegrations.qml` loads one installed engine for Screen Time, Phone and
@@ -156,7 +148,7 @@ no external plugin source is patched. Updates to those engines should be
 checked against the Hub's copied views before distribution.
 
 `scripts/integration_service.py enable <id>` moves the selected integration's
-preferences into `kevin.hub.integrations`, removes its standalone service/bar
+preferences into `kevinbsr.omahub.integrations`, removes its standalone service/bar
 entries, and marks its standalone plugin disabled. This gives the engine a
 single owner, preserving the original tracking history, KDE Connect pairing
 and Nearby identity. Re-enabling a standalone plugin makes the Hub relinquish
@@ -258,7 +250,7 @@ All optional — declare what you need and ignore the rest.
 | `function tabHidden()` | stopped being it — tab switch or panel close |
 | `function panelClosed()` | panel dismissed; drop transient state |
 
-Settings are shared: every tab reads and writes the one `kevin.hub` entry in
+Settings are shared: every tab reads and writes the one `kevinbsr.omahub` entry in
 `shell.json`, so prefix keys that could collide.
 
 There is one bar widget per monitor and one shared `Panel.qml` in the singleton
@@ -318,7 +310,7 @@ the calendar every time, whatever tab the panel closed on; a second click
 with that page already up is what closes the panel, and clicking a different
 glyph switches pages instead of closing.
 
-The persisted last-used tab still governs `omarchy-shell kevin.hub toggle`
+The persisted last-used tab still governs `omarchy-shell kevinbsr.omahub toggle`
 and a fresh session — it is only the bar's glyphs that override it, because
 each one is a question with a specific answer.
 
@@ -333,12 +325,12 @@ becoming a pause bar — would otherwise drag the whole center row sideways.
 ## IPC
 
 ```bash
-omarchy-shell kevin.hub toggle
-omarchy-shell kevin.hub tab weather    # open straight onto a page
-omarchy-shell kevin.hub tabToggle calendar  # what the clock glyph does
-omarchy-shell kevin.hub cycleFormat    # same as right-clicking the label
-omarchy-shell kevin.hub refreshWeather
-omarchy-shell kevin.hub.media playPause # Hub player ranking and source choice
+omarchy-shell kevinbsr.omahub toggle
+omarchy-shell kevinbsr.omahub tab weather    # open straight onto a page
+omarchy-shell kevinbsr.omahub tabToggle calendar  # what the clock glyph does
+omarchy-shell kevinbsr.omahub cycleFormat    # same as right-clicking the label
+omarchy-shell kevinbsr.omahub refreshWeather
+omarchy-shell kevinbsr.omahub.media playPause # Hub player ranking and source choice
 ```
 
 ## Gotcha

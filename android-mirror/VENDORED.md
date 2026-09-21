@@ -35,7 +35,7 @@ as an upstream `Panel.qml` change would for anyone running that panel.
 
 Upstream's manifest declares only `"kinds": ["bar-widget"]`, with no service
 entry point -- MirrorBackend.qml was never meant to be loaded by anything but
-Panel.qml. `kevin.hub/scripts/integration_service.py`'s `ALLOWED` set gained
+Panel.qml. `kevinbsr.omahub/scripts/integration_service.py`'s `ALLOWED` set gained
 the plugin's id, and its `MANIFEST_PATCHES` table knows to add `"service"` to
 `kinds` and `"entryPoints.service": "MirrorBackend.qml"` to android-mirror's
 OWN `manifest.json` the first time it is enabled (`patch_manifest_for_service`,

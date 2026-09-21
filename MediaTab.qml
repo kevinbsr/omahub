@@ -31,7 +31,7 @@ Item {
   readonly property color faint: Qt.rgba(foreground.r, foreground.g, foreground.b, 0.52)
 
   readonly property var service: bar && bar.shell && typeof bar.shell.serviceFor === "function"
-    ? bar.shell.serviceFor("kevin.hub")
+    ? bar.shell.serviceFor("kevinbsr.omahub")
     : null
 
   readonly property var directPlayers: Mpris.players ? Mpris.players.values : []

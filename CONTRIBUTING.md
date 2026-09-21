@@ -16,7 +16,7 @@ For shell testing, link the checkout into the local plugin directory and
 restart the shell if the file watcher becomes stale:
 
 ```bash
-ln -s "$PWD" ~/.config/omarchy/plugins/kevin.hub
+ln -s "$PWD" ~/.config/omarchy/plugins/kevinbsr.omahub
 omarchy restart shell
 ```
 

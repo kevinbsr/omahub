@@ -20,7 +20,7 @@ class ServiceConfigTests(unittest.TestCase):
         result = integration.service_config(config, "omaconnect")
         self.assertEqual(result["bar"]["layout"]["right"], [])
         self.assertEqual(result["bar"]["layout"]["left"], config["bar"]["layout"]["left"])
-        self.assertEqual(result["plugins"], [{"id": "keep", "custom": [1, 2]}, {"id": "kevin.hub", "integrations": {"omaconnect": {"showBattery": True}}}])
+        self.assertEqual(result["plugins"], [{"id": "keep", "custom": [1, 2]}, {"id": "kevinbsr.omahub", "integrations": {"omaconnect": {"showBattery": True}}}])
         self.assertEqual(result["disabledPlugins"], ["omaconnect", "keep-disabled"])
         self.assertEqual(result["idle"], config["idle"])
         self.assertEqual(len(config["bar"]["layout"]["right"]), 1)
@@ -30,7 +30,7 @@ class ServiceConfigTests(unittest.TestCase):
         config = {"plugins": [{"id": "agx.screen-time", "option": 1}, "agx.screen-time"],
                   "bar": {"layout": {"center": [{"id": "agx.screen-time", "option": 0, "custom": True}]}}}
         result = integration.service_config(config, "agx.screen-time")
-        self.assertEqual(result["plugins"], [{"id": "kevin.hub", "integrations": {"agx.screen-time": {"option": 1, "custom": True}}}])
+        self.assertEqual(result["plugins"], [{"id": "kevinbsr.omahub", "integrations": {"agx.screen-time": {"option": 1, "custom": True}}}])
         self.assertFalse(result["bar"]["layout"]["center"])
 
     def test_rejects_unrelated_plugin(self):
@@ -38,10 +38,10 @@ class ServiceConfigTests(unittest.TestCase):
             integration.service_config({}, "unrelated")
 
     def test_minimal_config(self):
-        self.assertEqual(integration.service_config({}, "omaconnect"), {"plugins": [{"id": "kevin.hub", "integrations": {"omaconnect": {}}}], "disabledPlugins": ["omaconnect"]})
+        self.assertEqual(integration.service_config({}, "omaconnect"), {"plugins": [{"id": "kevinbsr.omahub", "integrations": {"omaconnect": {}}}], "disabledPlugins": ["omaconnect"]})
 
     def test_migrates_all_without_losing_hub_or_receiver_preferences(self):
-        config = {"bar": {"layout": {"right": [{"id": "kevin.hub", "birthYear": 2000}]}},
+        config = {"bar": {"layout": {"right": [{"id": "kevinbsr.omahub", "birthYear": 2000}]}},
                   "plugins": [{"id": "oma.nearby", "receiverEnabled": False},
                               {"id": "omaconnect"}, {"id": "agx.screen-time"}]}
         for plugin in sorted(integration.ALLOWED):
@@ -55,10 +55,10 @@ class ServiceConfigTests(unittest.TestCase):
         self.assertEqual(integration.service_config(config, "oma.nearby"), config)
 
     def test_promotes_string_hub_without_moving_it(self):
-        config = {"bar": {"layout": {"center": ["kevin.hub", "other"]}}}
+        config = {"bar": {"layout": {"center": ["kevinbsr.omahub", "other"]}}}
         result = integration.service_config(config, "omaconnect")
         self.assertEqual(result["bar"]["layout"]["center"],
-                         [{"id": "kevin.hub", "integrations": {"omaconnect": {}}}, "other"])
+                         [{"id": "kevinbsr.omahub", "integrations": {"omaconnect": {}}}, "other"])
 
 
 class ManifestPatchTests(unittest.TestCase):

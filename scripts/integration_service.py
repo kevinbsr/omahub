@@ -62,16 +62,16 @@ def service_config(config, plugin_id):
             settings.update(entry)
     settings.pop("id", None)
     result["plugins"] = [entry for entry in plugins if entry_id(entry) != plugin_id]
-    hub_entries = [entry for entry in result["plugins"] if entry_id(entry) == "kevin.hub"]
+    hub_entries = [entry for entry in result["plugins"] if entry_id(entry) == "kevinbsr.omahub"]
     for section, entries in layout.items():
         for index, entry in enumerate(entries):
-            if entry_id(entry) == "kevin.hub":
+            if entry_id(entry) == "kevinbsr.omahub":
                 if isinstance(entry, str):
-                    entry = {"id": "kevin.hub"}
+                    entry = {"id": "kevinbsr.omahub"}
                     entries[index] = entry
                 hub_entries.append(entry)
     if not hub_entries:
-        hub_entries = [{"id": "kevin.hub"}]
+        hub_entries = [{"id": "kevinbsr.omahub"}]
         result["plugins"].append(hub_entries[0])
     # Keep every Hub entry consistent (some installations use several bars).
     integrations = {}
@@ -109,7 +109,7 @@ def main():
         for region in config.get("bar", {}).get("layout", {}).values():
             entries.extend(region)
         enabled = installed and args.plugin_id in config.get("disabledPlugins", []) and any(
-            isinstance(e, dict) and e.get("id") == "kevin.hub" and args.plugin_id in e.get("integrations", {})
+            isinstance(e, dict) and e.get("id") == "kevinbsr.omahub" and args.plugin_id in e.get("integrations", {})
             for e in entries
         )
         print(json.dumps({"installed": installed, "enabled": enabled}))

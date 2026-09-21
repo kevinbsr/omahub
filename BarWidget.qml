@@ -27,7 +27,7 @@ import "MediaModel.js" as MediaModel
 // between tracks. The glyph is only there when something can play.
 BarWidget {
   id: root
-  moduleName: "kevin.hub"
+  moduleName: "kevinbsr.omahub"
 
   property date displayDate: clock.date
 
@@ -64,7 +64,7 @@ BarWidget {
   //      the direct Mpris read is only a stand-in for the moment before it
   //      mounts, so the glyph is never blank while something is playing.
   readonly property var mediaService: bar && bar.shell && typeof bar.shell.serviceFor === "function"
-    ? bar.shell.serviceFor("kevin.hub")
+    ? bar.shell.serviceFor("kevinbsr.omahub")
     : null
   readonly property var directPlayers: Mpris.players ? Mpris.players.values : []
   readonly property var mediaPlayer: mediaService ? mediaService.activePlayer : firstDirectPlayer()

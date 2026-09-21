@@ -39,7 +39,7 @@ import qs.Ui
 // theme. Smaller values are reserved for text/icon grouping.
 Panel {
   id: root
-  moduleName: "kevin.hub"
+  moduleName: "kevinbsr.omahub"
   ipcTarget: ""
   manageIpc: false
 
@@ -94,7 +94,7 @@ Panel {
   // because BarWidget.qml hands them over after loading this panel, so an
   // up-front read would only ever see an empty object.
   readonly property var hubService: bar && bar.shell && typeof bar.shell.serviceFor === "function"
-    ? bar.shell.serviceFor("kevin.hub") : null
+    ? bar.shell.serviceFor("kevinbsr.omahub") : null
   property int currentIndex: 0
   readonly property var currentTab: tabs[Math.max(0, Math.min(currentIndex, tabs.length - 1))]
   readonly property string currentTabId: currentTab ? String(currentTab.id) : ""

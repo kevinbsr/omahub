@@ -29,7 +29,7 @@ Item {
   // forecast, and three refresh timers after that.
   //
   // The source reads two settings (`unit`, `refreshMinutes`) through a bar
-  // widget's setting(). Every monitor's widget carries the same kevin.hub
+  // widget's setting(). Every monitor's widget carries the same kevinbsr.omahub
   // entry, so any one will do: they claim `settingsHub` as they arrive and let
   // go when destroyed (a monitor unplugged), and the next one takes over.
   property var settingsHub: null
@@ -615,7 +615,7 @@ Item {
   }
 
   IpcHandler {
-    target: "kevin.hub"
+    target: "kevinbsr.omahub"
 
     function refresh(): void { root.refreshHub() }
     function cycleFormat(): void {
@@ -650,7 +650,7 @@ Item {
   IpcHandler {
     // The shell's built-in media service owns `media`. Keep the Hub's richer
     // source-selection endpoint namespaced so both handlers stay reachable.
-    target: "kevin.hub.media"
+    target: "kevinbsr.omahub.media"
 
     function status(): string {
       return root.statusJson()

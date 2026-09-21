@@ -15,7 +15,7 @@ Item {
     for (var region of ["left", "center", "right"]) entries = entries.concat(layout[region] || [])
     var result = ({})
     for (var entry of entries)
-      if (entry && entry.id === "kevin.hub") result = Object.assign(result, entry.integrations || {})
+      if (entry && entry.id === "kevinbsr.omahub") result = Object.assign(result, entry.integrations || {})
     return result
   }
   readonly property var screenTime: screenLoader.item
@@ -119,7 +119,7 @@ Item {
   function reportIntegrationFailure(pluginId, label) {
     Quickshell.execDetached(["notify-send", "-u", "normal", "-t", "12000",
       "-i", "dialog-warning",
-      "-h", "string:x-canonical-private-synchronous:kevin-hub-integration-" + pluginId,
+      "-h", "string:x-canonical-private-synchronous:omahub-integration-" + pluginId,
       "Hub integration broken",
       label + " is enabled but failed to load. Check the plugin, or disable and re-enable it in the Hub's settings."])
   }
@@ -137,16 +137,16 @@ Item {
       if (id !== "oma.nearby" || !root.hubService.shell) return false
       var next = Object.assign({}, root.settings)
       next[id] = Object.assign({}, next[id] || {}, values)
-      return root.hubService.shell.updateEntryInline("kevin.hub", {integrations: next})
+      return root.hubService.shell.updateEntryInline("kevinbsr.omahub", {integrations: next})
     }
     function summon(id, payload) {
       root.hubService.currentTab = "nearby"
-      return root.hubService.shell ? root.hubService.shell.summon("kevin.hub", payload) : false
+      return root.hubService.shell ? root.hubService.shell.summon("kevinbsr.omahub", payload) : false
     }
-    function hide(id) { return root.hubService.shell ? root.hubService.shell.hide("kevin.hub") : false }
+    function hide(id) { return root.hubService.shell ? root.hubService.shell.hide("kevinbsr.omahub") : false }
     function toggle(id, payload) {
       root.hubService.currentTab = "nearby"
-      return root.hubService.shell ? root.hubService.shell.toggle("kevin.hub", payload) : false
+      return root.hubService.shell ? root.hubService.shell.toggle("kevinbsr.omahub", payload) : false
     }
   }
 
