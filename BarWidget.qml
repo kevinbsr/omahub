@@ -72,6 +72,14 @@ BarWidget {
   readonly property bool hasMedia: mediaPlayer !== null && mediaPlayer !== undefined
   readonly property bool mediaPlaying: hasMedia && mediaPlayer.isPlaying === true
   readonly property string mediaIcon: mediaPlaying ? "󰏤" : "󰐊"
+
+  // Disk warning, from the same service: a glyph that exists only while a
+  // filesystem is over the threshold. nf-md-harddisk, and nf-md-alert once
+  // there is barely any room left.
+  readonly property var diskAlerts: mediaService && mediaService.diskAlerts ? mediaService.diskAlerts : []
+  readonly property bool diskAlert: diskAlerts.length > 0
+  readonly property bool diskCritical: mediaService ? mediaService.diskCritical === true : false
+  readonly property string diskIcon: diskCritical ? "󰀦" : "󰋊"
   readonly property string mediaTitle: hasMedia ? (mediaPlayer.trackTitle || "") : ""
   readonly property string mediaArtist: hasMedia ? (mediaPlayer.trackArtist || "") : ""
   readonly property string mediaTooltip: mediaTitle
@@ -279,8 +287,8 @@ BarWidget {
   Grid {
     id: layout
     anchors.centerIn: parent
-    rows: root.vertical ? 3 : 1
-    columns: root.vertical ? 1 : 3
+    rows: root.vertical ? 4 : 1
+    columns: root.vertical ? 1 : 4
     horizontalItemAlignment: Grid.AlignHCenter
     verticalItemAlignment: Grid.AlignVCenter
 
@@ -370,6 +378,30 @@ BarWidget {
       onWheelMoved: function(delta) {
         if (!root.hasMedia || delta === 0) return
         root.runMediaAction(delta > 0 ? "previous" : "next")
+      }
+    }
+
+    WidgetButton {
+      id: diskButton
+      bar: root.bar
+      // Blank collapses the button, like the media glyph with no player: the
+      // warning takes bar space only while there is something to warn about.
+      text: root.diskAlert ? root.diskIcon : ""
+      fixedWidth: root.vertical ? -1 : Style.bar.statusSlot
+      fixedHeight: root.vertical ? Style.bar.statusSlot : -1
+      foreground: root.diskCritical ? Color.urgent : (root.bar ? root.bar.barForeground : Color.foreground)
+      tooltipText: root.diskAlert
+        ? mediaService.diskSummary() + "\nClick for details · right-click opens ncdu"
+        : ""
+
+      onPressed: function(b) {
+        if (!root.diskAlert) return
+        if (b === Qt.RightButton) {
+          if (root.bar) root.bar.run("omarchy-launch-floating-terminal-with-presentation ncdu " +
+                                     (mediaService.diskWorst ? mediaService.diskWorst.mount : "/home"))
+          return
+        }
+        root.toggleTab("system")
       }
     }
   }

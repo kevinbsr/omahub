@@ -9,7 +9,32 @@ from pathlib import Path
 import tempfile
 import time
 
-ALLOWED = {"agx.screen-time", "omaconnect", "oma.nearby"}
+ALLOWED = {"agx.screen-time", "omaconnect", "oma.nearby", "io.github.ayan-de.android-mirror"}
+
+# Plugins the Hub knows how to host as a service but that only ever declared a
+# UI kind, because nothing else was meant to load them. Enabling one of these
+# adds the missing kind/entryPoint to that plugin's OWN manifest.json first --
+# see android-mirror/VENDORED.md for why android-mirror needs this and the
+# upstream PR that would remove the need for it.
+MANIFEST_PATCHES = {
+    "io.github.ayan-de.android-mirror": {"kind": "service", "entryPoint": "MirrorBackend.qml"},
+}
+
+
+def patch_manifest_for_service(plugin_id, manifest_path, manifest):
+    patch = MANIFEST_PATCHES.get(plugin_id)
+    if not patch:
+        return False
+    if patch["kind"] in manifest.get("kinds", []) and manifest.get("entryPoints", {}).get("service"):
+        return False
+    updated = copy.deepcopy(manifest)
+    if patch["kind"] not in updated.setdefault("kinds", []):
+        updated["kinds"].append(patch["kind"])
+    updated.setdefault("entryPoints", {})["service"] = patch["entryPoint"]
+    manifest_path.write_text(json.dumps(updated, indent=2, ensure_ascii=False) + "\n")
+    manifest.clear()
+    manifest.update(updated)
+    return True
 
 
 def entry_id(entry):
@@ -74,6 +99,8 @@ def main():
     installed = False
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
+        if args.action == "enable":
+            patch_manifest_for_service(args.plugin_id, manifest_path, manifest)
         installed = "service" in manifest.get("kinds", []) and manifest.get("id") == args.plugin_id
     config_path = (Path.home() / ".config/omarchy/shell.json").resolve()
     if args.action == "status":

@@ -3,20 +3,20 @@
 # omarchy:summary=Emit one JSON snapshot of CPU, RAM, GPU and disk usage
 # omarchy:hidden=true
 #
-# Alimenta a aba System do kevin.hub. Rede fica de fora de propósito: o painel de
-# Network do Omarchy já cobre isso.
+# Feeds kevin.hub's System tab. Network is deliberately left out: Omarchy's own
+# Network panel already covers it.
 #
-# REGRA DA dGPU: nvidia-smi só com runtime_status == active.
+# dGPU RULE: nvidia-smi only runs when runtime_status == active.
 #
-# O driver proprietário não expõe hwmon nem gpu_busy_percent em sysfs, então uso,
-# temperatura e VRAM da NVIDIA só saem por NVML (nvidia-smi). Só que cada query
-# dele acorda o chip para P0/1702MHz -- o sys-summary.sh da waybar antiga fazia
-# isso a cada 1s, e era o próprio monitor que mantinha a GPU acordada.
+# The proprietary driver exposes neither hwmon nor gpu_busy_percent in sysfs, so
+# NVIDIA usage, temperature and VRAM only come from NVML (nvidia-smi). But every
+# query wakes the chip to P0/1702MHz -- the old waybar sys-summary.sh did this
+# every 1s, and the monitor itself was what kept the GPU awake.
 #
-# Com o chip já ligado a consulta não o tira do sono, então ela é permitida. Em
-# "suspended" a GPU está sem energia: não há uso nem temperatura para ler, e
-# consultar seria exatamente o que a acordaria. Aí ficam só os contadores de
-# runtime PM (runtime_active_time / runtime_suspended_time), que não a perturbam.
+# With the chip already on, querying doesn't wake it further, so it's allowed. In
+# "suspended" the GPU has no power: there's no usage or temperature to read, and
+# querying would be exactly what wakes it. That leaves only the runtime PM
+# counters (runtime_active_time / runtime_suspended_time), which don't disturb it.
 
 set -uo pipefail
 
@@ -39,8 +39,8 @@ if [[ -r $cpu_state ]]; then
     if (dt > 0) printf "%d", 100 * (dt - di) / dt; else print 0
   }')
 else
-  # Primeira execução: não há janela anterior, então tira uma amostra curta em
-  # vez de reportar 0.
+  # First run: there's no previous window, so take a short sample instead
+  # of reporting 0.
   sleep 0.15
   later=$(read_cpu_sample)
   cpu_percent=$(awk -v p="$now_sample" -v n="$later" 'BEGIN {
@@ -112,7 +112,7 @@ for card in /sys/class/drm/card*/device; do
 done
 
 # ---------------------------------------------------------------- dGPU (NVIDIA)
-# Só contadores de runtime PM. "asleep" aqui significa D3cold de verdade.
+# Runtime PM counters only. "asleep" here means true D3cold.
 dgpu_present=false
 dgpu_status="absent"
 dgpu_active_percent=0
@@ -153,14 +153,14 @@ for dev in /sys/bus/pci/devices/*; do
 
   dgpu_power_state=$(cat "$dev/power_state" 2>/dev/null || echo "")
 
-  # Utilização, temperatura e VRAM da NVIDIA só existem via NVML (nvidia-smi):
-  # o driver proprietário não expõe hwmon nem gpu_busy_percent em sysfs.
+  # NVIDIA usage, temperature and VRAM only exist via NVML (nvidia-smi): the
+  # proprietary driver exposes neither hwmon nor gpu_busy_percent in sysfs.
   #
-  # A consulta só acontece com runtime_status == active, ou seja, com o chip já
-  # ligado -- aí ela não o tira do sono. Em "suspended" a GPU está SEM energia e
-  # não há o que ler: consultar seria justamente o que a acordaria.
+  # The query only runs when runtime_status == active, i.e. with the chip
+  # already on -- so it doesn't wake it. In "suspended" the GPU has NO power
+  # and there's nothing to read: querying would be exactly what wakes it.
   if [[ $dgpu_status == "active" ]] && command -v nvidia-smi >/dev/null 2>&1; then
-    # Uma consulta já em curso pode demorar; não empilhar outra.
+    # A query already in flight can take a while; don't stack another one.
     if ! pgrep -x nvidia-smi >/dev/null 2>&1; then
       smi=$(timeout -k 1 2 nvidia-smi \
         --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,clocks.sm \
@@ -180,21 +180,27 @@ for dev in /sys/bus/pci/devices/*; do
   break
 done
 
-# ---------------------------------------------------------------- Discos
+# ---------------------------------------------------------------- Disks
 disks_json=$(
   for entry in "Root:/" "Home:/home"; do
     label="${entry%%:*}"
     mount="${entry#*:}"
     mountpoint -q "$mount" 2>/dev/null || [[ $mount == "/" ]] || continue
-    df -B1 --output=used,size "$mount" 2>/dev/null | awk -v label="$label" -v mount="$mount" '
+    # Percentage the way df reports it: used over used+available, rounded up.
+    # Dividing by the device size instead counts chunks btrfs has allocated but
+    # will not hand out, so the hub showed 90% while df and the disk alert said
+    # 91% for the same filesystem (2026-09-17: 429.44 used, 476.92 size, 45.28
+    # available). Two numbers for one thing is worse than either number.
+    df -B1 --output=used,size,avail "$mount" 2>/dev/null | awk -v label="$label" -v mount="$mount" '
       NR == 2 {
-        pct = ($2 > 0) ? int(100 * $1 / $2) : 0
-        printf "{\"label\":\"%s\",\"mount\":\"%s\",\"used\":%d,\"total\":%d,\"percent\":%d}\n", label, mount, $1, $2, pct
+        usable = $1 + $3
+        pct = (usable > 0) ? int(100 * $1 / usable + 0.999999) : 0
+        printf "{\"label\":\"%s\",\"mount\":\"%s\",\"used\":%d,\"total\":%d,\"avail\":%d,\"percent\":%d}\n", label, mount, $1, $2, $3, pct
       }'
   done | paste -sd,
 )
 
-# ---------------------------------------------------------------- Saída
+# ---------------------------------------------------------------- Output
 cat <<JSON
 {
   "cpu": {"percent": ${cpu_percent:-0}, "temp": ${cpu_temp:-0}, "cores": ${cpu_cores:-0}},

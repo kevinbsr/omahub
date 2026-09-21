@@ -1,5 +1,7 @@
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
 
 spec = importlib.util.spec_from_file_location("integration", Path(__file__).parents[1] / "scripts/integration_service.py")
@@ -57,6 +59,41 @@ class ServiceConfigTests(unittest.TestCase):
         result = integration.service_config(config, "omaconnect")
         self.assertEqual(result["bar"]["layout"]["center"],
                          [{"id": "kevin.hub", "integrations": {"omaconnect": {}}}, "other"])
+
+
+class ManifestPatchTests(unittest.TestCase):
+    def test_adds_missing_service_kind_and_entry_point(self):
+        manifest = {"id": "io.github.ayan-de.android-mirror", "kinds": ["bar-widget"],
+                    "entryPoints": {"barWidget": "Panel.qml"}}
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest))
+            changed = integration.patch_manifest_for_service("io.github.ayan-de.android-mirror", manifest_path, manifest)
+            self.assertTrue(changed)
+            self.assertEqual(manifest["kinds"], ["bar-widget", "service"])
+            self.assertEqual(manifest["entryPoints"]["service"], "MirrorBackend.qml")
+            on_disk = json.loads(manifest_path.read_text())
+            self.assertEqual(on_disk["kinds"], ["bar-widget", "service"])
+
+    def test_idempotent_once_patched(self):
+        manifest = {"id": "io.github.ayan-de.android-mirror", "kinds": ["bar-widget", "service"],
+                    "entryPoints": {"barWidget": "Panel.qml", "service": "MirrorBackend.qml"}}
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest))
+            before = manifest_path.read_text()
+            changed = integration.patch_manifest_for_service("io.github.ayan-de.android-mirror", manifest_path, manifest)
+            self.assertFalse(changed)
+            self.assertEqual(manifest_path.read_text(), before)
+
+    def test_leaves_unlisted_plugins_untouched(self):
+        manifest = {"id": "omaconnect", "kinds": ["bar-widget"]}
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest))
+            changed = integration.patch_manifest_for_service("omaconnect", manifest_path, manifest)
+            self.assertFalse(changed)
+            self.assertEqual(manifest["kinds"], ["bar-widget"])
 
 
 if __name__ == "__main__":

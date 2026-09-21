@@ -13,6 +13,10 @@ Kevin Hub contains modified portions of these MIT-licensed projects:
   local compatibility changes.
 - [Omarchy Nearby](https://github.com/jfg96/omarchy-nearby), used as the basis
   for the Nearby page and `NearbyModel.js`. Copyright (c) 2026 jfg96.
+- [Android Mirror](https://github.com/ayandexyz/omarchy-android-mirror), used
+  as the basis for the Phone page's device list and mirror controls.
+  Copyright (c) 2026 Ayan De. See `android-mirror/VENDORED.md` for the
+  tracked revision and local compatibility changes.
 
 Their MIT terms follow:
 

@@ -2,9 +2,11 @@ import QtQuick
 import qs.Commons
 import qs.Ui
 import "kdeconnect"
+import "android-mirror"
 
 // KDE Connect page of the hub: devices, pairing, the action toolbar, the
-// ping/share composers, and remote commands.
+// ping/share composers, and remote commands -- with Android Mirror's device
+// list and mirror button underneath, when that integration is on.
 //
 // The four sections under kdeconnect/ are omaconnect's, copied verbatim —
 // see kdeconnect/VENDORED.md for the revision and how to resync. They take a
@@ -14,7 +16,9 @@ import "kdeconnect"
 //
 // Copied rather than imported across plugins, because `panel.*` is
 // upstream's internal contract and a release is free to change it. The engine remains installed upstream and is loaded once by
-// HubIntegrations.qml, within the Hub service.
+// HubIntegrations.qml, within the Hub service. AndroidMirrorSection under
+// android-mirror/ is the same idea for a second, unrelated phone
+// integration -- see android-mirror/VENDORED.md.
 Item {
   id: root
 
@@ -564,6 +568,18 @@ Item {
     RemoteCommandsSection {
       id: remoteCommandsSection
       panel: root
+    }
+
+    PanelSeparator { width: parent.width }
+
+    AndroidMirrorSection {
+      id: mirrorSection
+      width: parent.width
+      hub: root.hub
+      backend: root.hub && root.hub.hubService && root.hub.hubService.integrations
+        ? root.hub.hubService.integrations.mirror : null
+      foreground: root.foreground
+      fontFamily: root.fontFamily
     }
   }
 }

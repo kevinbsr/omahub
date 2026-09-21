@@ -213,14 +213,14 @@ Panel {
   // Summoning by hotkey moves no pointer, so a hover the bar was still
   // holding must not keep the center indicators revealed behind the panel.
   function setCenterHoverRevealSuppressed(value) {
-    // O shell passou a entregar aos plugins um PluginBarApi, e nele
-    // centerHoverRevealSuppressed e readonly (Ui/PluginBarApi.qml:26): a
-    // atribuicao direta lanca TypeError. Como close() chamava isto ANTES de
-    // controller.hide(), a excecao abortava a funcao e o painel nunca fechava,
-    // deixando a layer omarchy-keyboard-panel presa na tela em 1536x864.
-    // Corrigido em 2026-09-09 copiando o padrao dos paineis do proprio Omarchy
-    // (plugins/panels/clock/Panel.qml): preferir o setter da API e manter a
-    // atribuicao apenas como fallback para o Bar real.
+    // The shell started handing plugins a PluginBarApi, where
+    // centerHoverRevealSuppressed is readonly (Ui/PluginBarApi.qml:26): a
+    // direct assignment throws TypeError. Since close() called this BEFORE
+    // controller.hide(), the exception aborted the function and the panel
+    // never closed, leaving the omarchy-keyboard-panel layer stuck on
+    // screen at 1536x864. Fixed by copying the pattern from Omarchy's own
+    // panels (plugins/panels/clock/Panel.qml): prefer the API's setter and
+    // keep the direct assignment only as a fallback for the real Bar.
     if (root.bar && typeof root.bar.setCenterHoverRevealSuppressed === "function")
       root.bar.setCenterHoverRevealSuppressed(value)
     else if (root.bar && "centerHoverRevealSuppressed" in root.bar)

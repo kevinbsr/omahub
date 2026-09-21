@@ -19,6 +19,9 @@ Item {
 
   readonly property var integrationHost: hub && hub.hubService ? hub.hubService.integrations : null
   readonly property var service: integrationHost ? integrationHost.screenTime : null
+  // Enabled and loaded, but the loader hit an error -- distinct from never
+  // having been turned on, which "Enable activity tracking" already covers.
+  readonly property bool serviceFailed: !!(integrationHost && integrationHost.screenTimeFailed)
   readonly property bool serviceReady: !!(service && service.ready === true)
   readonly property var today: service ? service.today : null
   readonly property var days: service ? service.days : ({})
@@ -171,14 +174,24 @@ Item {
     }
 
     Text {
-      visible: !root.serviceReady
+      // Enabled-but-broken is its own state, and the one thing it must never
+      // read as: turning tracking on again does nothing when it is already
+      // on. See HubIntegrations.qml's screenTimeFailed.
+      visible: root.serviceFailed
+      width: parent.width
+      text: "Screen Time is enabled, but failed to load. Disable and re-enable it in the Hub's settings, or check the plugin — a notification named which one failed."
+      color: Color.urgent
+      font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; wrapMode: Text.Wrap
+    }
+    Text {
+      visible: !root.serviceReady && !root.serviceFailed
       width: parent.width
       text: !root.service ? (trackerSetup.configuredEnabled ? "Starting activity tracking…" : "Enable activity tracking to collect focused-window time.") : "Loading history…"
       color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.7)
       font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; wrapMode: Text.Wrap
     }
     IntegrationSetup {
-      id: trackerSetup; visible: !root.service; width: parent.width
+      id: trackerSetup; visible: !root.service && !root.serviceFailed; width: parent.width
       pluginId: "agx.screen-time"; actionText: "Enable tracking"
       foreground: root.foreground; fontFamily: root.fontFamily
     }

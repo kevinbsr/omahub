@@ -512,6 +512,61 @@ Item {
     }
   }
 
+  // --- Disk space -----------------------------------------------------------
+  // A filesystem filling up is a state, not an event: it belongs in the bar
+  // while it lasts, not in a notification every ten minutes. The poll lives
+  // here, in the one service the whole shell shares, so it runs once no matter
+  // how many screens draw the bar.
+  //
+  // Percentages are df's: used over used+available, the space that can still be
+  // written. Dividing by the device size counts chunks btrfs has allocated and
+  // will not hand out -- that is why this panel used to read 90% while df and
+  // the old alert said 91% for the same filesystem.
+  property var diskMounts: ["/", "/home"]
+  property int diskWarnPercent: 90
+  property int diskCriticalPercent: 97
+  // [{ mount, percent, availGib }], worst first, only those over the warning.
+  property var diskAlerts: []
+  readonly property var diskWorst: diskAlerts.length > 0 ? diskAlerts[0] : null
+  readonly property bool diskCritical: diskWorst ? diskWorst.percent >= diskCriticalPercent : false
+
+  function diskSummary() {
+    if (diskAlerts.length === 0) return ""
+    return diskAlerts.map(function(a) {
+      return a.mount + " " + a.percent + "% · " + a.availGib + " GiB free"
+    }).join("\n")
+  }
+
+  Process {
+    id: diskProbe
+    command: ["sh", "-c",
+      "df -P -B1 " + root.diskMounts.map(function(m) { return "'" + m + "'" }).join(" ") +
+      " 2>/dev/null | awk 'NR>1 { used=$3; avail=$4; usable=used+avail;" +
+      " if (usable>0) printf \"%s %d %.1f\\n\", $6, int(100*used/usable+0.999999), avail/1073741824 }'"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var found = []
+        String(text || "").trim().split("\n").forEach(function(line) {
+          var parts = line.trim().split(/\s+/)
+          if (parts.length !== 3) return
+          var percent = parseInt(parts[1], 10)
+          if (isNaN(percent) || percent < root.diskWarnPercent) return
+          found.push({ mount: parts[0], percent: percent, availGib: parts[2] })
+        })
+        found.sort(function(a, b) { return b.percent - a.percent })
+        root.diskAlerts = found
+      }
+    }
+  }
+
+  Timer {
+    interval: 120000
+    running: true
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: if (!diskProbe.running) diskProbe.running = true
+  }
+
   Timer {
     id: trackOsdTimer
     interval: 120

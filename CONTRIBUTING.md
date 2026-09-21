@@ -21,5 +21,5 @@ omarchy restart shell
 ```
 
 When updating vendored code, retain its copyright notice, record the upstream
-revision and describe local modifications in `kdeconnect/VENDORED.md` or the
-source file header.
+revision and describe local modifications in `kdeconnect/VENDORED.md`,
+`android-mirror/VENDORED.md`, or the source file header.
