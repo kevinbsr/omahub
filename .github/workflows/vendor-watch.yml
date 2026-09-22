@@ -1,0 +1,78 @@
+name: vendor watch
+
+# Two jobs with different questions:
+#   verify  — on every push and PR: is the vendored tree still exactly
+#             upstream@commit + our patches? A hand edit fails the build.
+#   status  — daily: has upstream moved past the pin? If so, say what changed
+#             in one issue that is updated rather than reopened every day.
+
+on:
+  push:
+    paths:
+      - "vendor/**"
+      - "tools/vendor-sync"
+      - ".github/workflows/vendor-watch.yml"
+  pull_request:
+    paths:
+      - "vendor/**"
+      - "tools/vendor-sync"
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  verify:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: tools/vendor-sync verify
+
+  status:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check upstream
+        id: check
+        run: |
+          set +e
+          tools/vendor-sync status --json > status.json
+          echo "behind=$(jq '[.[] | select(.behind > 0)] | length' status.json)" >> "$GITHUB_OUTPUT"
+          {
+            echo "body<<VENDOR_EOF"
+            echo "Upstream has moved past the pins in \`vendor/vendor.json\`."
+            echo
+            jq -r '.[] | select(.behind > 0)
+                   | "## \(.name)\n\n`\(.pinned[0:9])` → `\(.upstream[0:9])`, \(.behind) commit(s):\n\n" +
+                     ([.commits[] | "- \(.)"] | join("\n")) + "\n"' status.json
+            echo "Update with:"
+            echo
+            echo '```bash'
+            jq -r '.[] | select(.behind > 0) | "tools/vendor-sync update \(.name)"' status.json
+            echo 'tools/vendor-sync verify'
+            echo '```'
+            echo
+            echo "If a patch stops applying, \`update\` refuses and says which one;"
+            echo "rework it against the new upstream before repinning."
+            echo "VENDOR_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the tracking issue
+        if: steps.check.outputs.behind != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.check.outputs.body }}
+        run: |
+          title="Vendored engines are behind upstream"
+          existing=$(gh issue list --state open --label vendor --search "$title in:title" --json number -q '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$BODY"
+          else
+            gh issue create --title "$title" --label vendor --body "$BODY"
+          fi

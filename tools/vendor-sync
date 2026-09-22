@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""Keep vendored upstream engines pinned, patched and honest.
+
+Each engine in vendor/vendor.json is upstream@commit plus a list of patches.
+The vendored tree is derived, never hand-edited:
+
+    vendor-sync verify   rebuild from upstream@commit + patches, diff against
+                         what is checked in, fail on any difference
+    vendor-sync status   report commits upstream has added since the pin
+    vendor-sync update   move the pin to upstream HEAD, reapply the patches and
+                         rewrite the tree (refuses to leave conflicts behind)
+
+Only stdlib and git are used, so it runs the same by hand and in CI.
+"""
+
+import argparse
+import json
+import pathlib
+import shutil
+import subprocess
+import sys
+import tempfile
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+VENDOR = ROOT / "vendor"
+CONFIG = VENDOR / "vendor.json"
+CACHE = pathlib.Path.home() / ".cache" / "omahub-vendor"
+
+
+class Failure(Exception):
+    pass
+
+
+def run(cmd, cwd=None, check=True, capture=True):
+    result = subprocess.run(cmd, cwd=cwd, check=False, text=True,
+                            stdout=subprocess.PIPE if capture else None,
+                            stderr=subprocess.PIPE if capture else None)
+    if check and result.returncode != 0:
+        raise Failure(f"{' '.join(cmd)} failed ({result.returncode})\n{(result.stderr or '').strip()}")
+    return result
+
+
+def load_engines(names):
+    config = json.loads(CONFIG.read_text())
+    engines = config["engines"]
+    if names:
+        known = {e["name"] for e in engines}
+        unknown = set(names) - known
+        if unknown:
+            raise Failure(f"unknown engine(s): {', '.join(sorted(unknown))}")
+        engines = [e for e in engines if e["name"] in names]
+    return config, engines
+
+
+def mirror(engine):
+    """A bare mirror of upstream, fetched once per run."""
+    CACHE.mkdir(parents=True, exist_ok=True)
+    path = CACHE / f"{engine['name']}.git"
+    if not path.exists():
+        run(["git", "clone", "--bare", "--quiet", engine["upstream"], str(path)])
+    run(["git", "fetch", "--quiet", "origin", f"+refs/heads/*:refs/heads/*"], cwd=path)
+    return path
+
+
+def upstream_head(engine, repo):
+    return run(["git", "rev-parse", engine["branch"]], cwd=repo).stdout.strip()
+
+
+def commits_between(repo, old, new):
+    if old == new:
+        return []
+    out = run(["git", "log", "--oneline", "--no-decorate", f"{old}..{new}"], cwd=repo).stdout
+    return [line for line in out.splitlines() if line.strip()]
+
+
+def extract(engine, repo, commit, dest):
+    """Copy the included paths of upstream@commit into dest."""
+    dest.mkdir(parents=True, exist_ok=True)
+    for rel in engine["include"]:
+        blob = run(["git", "show", f"{commit}:{rel}"], cwd=repo, capture=True)
+        target = dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(blob.stdout)
+        if rel.endswith(".sh"):
+            target.chmod(0o755)
+
+
+def apply_patches(engine, tree):
+    applied = []
+    for name in engine.get("patches", []):
+        patch = VENDOR / "patches" / engine["name"] / name
+        if not patch.exists():
+            raise Failure(f"{engine['name']}: missing patch {patch.relative_to(ROOT)}")
+        result = run(["patch", "-p1", "--forward", "--silent", "-i", str(patch)],
+                     cwd=tree, check=False)
+        if result.returncode != 0:
+            raise Failure(
+                f"{engine['name']}: {name} does not apply to this upstream tree.\n"
+                f"{(result.stdout or '').strip()}\n{(result.stderr or '').strip()}\n"
+                "Rework the patch against the new upstream, then run update again.")
+        applied.append(name)
+    return applied
+
+
+def build(engine, commit, repo):
+    """upstream@commit + patches, in a temporary directory."""
+    tmp = pathlib.Path(tempfile.mkdtemp(prefix=f"vendor-{engine['name']}-"))
+    tree = tmp / engine["name"]
+    extract(engine, repo, commit, tree)
+    apply_patches(engine, tree)
+    return tmp, tree
+
+
+def tree_diff(built, checked_in):
+    """Paths that differ between the rebuilt tree and what is committed."""
+    if not checked_in.exists():
+        return ["<the vendored directory does not exist>"]
+    result = run(["diff", "-ruq", str(checked_in), str(built)], check=False)
+    return [line for line in result.stdout.splitlines() if line.strip()]
+
+
+def cmd_verify(args):
+    _, engines = load_engines(args.engines)
+    bad = False
+    for engine in engines:
+        repo = mirror(engine)
+        tmp, built = build(engine, engine["commit"], repo)
+        try:
+            differences = tree_diff(built, VENDOR / engine["name"])
+            if differences:
+                bad = True
+                print(f"FAIL {engine['name']}: checked-in tree is not upstream@{engine['commit'][:9]} + patches")
+                for line in differences:
+                    print(f"     {line}")
+            else:
+                print(f"ok   {engine['name']}: matches upstream@{engine['commit'][:9]} + "
+                      f"{len(engine.get('patches', []))} patch(es)")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    return 1 if bad else 0
+
+
+def cmd_status(args):
+    _, engines = load_engines(args.engines)
+    report = []
+    for engine in engines:
+        repo = mirror(engine)
+        head = upstream_head(engine, repo)
+        behind = commits_between(repo, engine["commit"], head)
+        report.append({"name": engine["name"], "pinned": engine["commit"], "upstream": head,
+                       "behind": len(behind), "commits": behind})
+    if args.json:
+        print(json.dumps(report, indent=2))
+    else:
+        for entry in report:
+            if entry["behind"] == 0:
+                print(f"ok   {entry['name']}: up to date at {entry['pinned'][:9]}")
+                continue
+            print(f"BEHIND {entry['name']}: {entry['behind']} commit(s) since {entry['pinned'][:9]}"
+                  f" -> {entry['upstream'][:9]}")
+            for line in entry["commits"]:
+                print(f"       {line}")
+    return 1 if any(e["behind"] for e in report) else 0
+
+
+def cmd_update(args):
+    config, engines = load_engines(args.engines)
+    changed = False
+    for engine in engines:
+        repo = mirror(engine)
+        head = args.commit or upstream_head(engine, repo)
+        previous = engine["commit"]
+        if head == previous and not args.force:
+            print(f"ok   {engine['name']}: already at {head[:9]}")
+            continue
+
+        tmp, built = build(engine, head, repo)
+        try:
+            destination = VENDOR / engine["name"]
+            if destination.exists():
+                shutil.rmtree(destination)
+            shutil.copytree(built, destination)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+        for entry in config["engines"]:
+            if entry["name"] == engine["name"]:
+                entry["commit"] = head
+        changed = True
+        print(f"updated {engine['name']}: {previous[:9]} -> {head[:9]} "
+              f"({len(engine.get('patches', []))} patch(es) still apply)")
+
+    if changed:
+        CONFIG.write_text(json.dumps(config, indent=2) + "\n")
+        print("\nvendor.json repinned. Review the diff, then run: tools/vendor-sync verify")
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p_verify = sub.add_parser("verify", help="rebuild and compare against the checked-in tree")
+    p_verify.add_argument("engines", nargs="*")
+    p_verify.set_defaults(func=cmd_verify)
+
+    p_status = sub.add_parser("status", help="report upstream commits since the pin")
+    p_status.add_argument("engines", nargs="*")
+    p_status.add_argument("--json", action="store_true")
+    p_status.set_defaults(func=cmd_status)
+
+    p_update = sub.add_parser("update", help="repin to upstream HEAD and reapply patches")
+    p_update.add_argument("engines", nargs="*")
+    p_update.add_argument("--commit", help="pin to this commit instead of branch HEAD")
+    p_update.add_argument("--force", action="store_true", help="rebuild even if the pin is unchanged")
+    p_update.set_defaults(func=cmd_update)
+
+    args = parser.parse_args()
+    try:
+        return args.func(args)
+    except Failure as error:
+        print(f"vendor-sync: {error}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

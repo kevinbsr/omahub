@@ -1,0 +1,32 @@
+{
+  "comment": [
+    "Upstream engines vendored into this repo. Each entry is pinned to an exact",
+    "commit; every local change lives in patches/<name>/*.patch and nowhere else.",
+    "tools/vendor-sync verify rebuilds the tree from upstream@commit + patches and",
+    "fails if the checked-in files differ, so a hand edit can never go unnoticed.",
+    "tools/vendor-sync status reports what upstream has added since the pin."
+  ],
+  "engines": [
+    {
+      "name": "android-mirror",
+      "upstream": "https://github.com/ayandexyz/omarchy-android-mirror",
+      "branch": "main",
+      "commit": "63306320d1297437117e9a593162b14ba8488ae7",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 Ayan De",
+      "include": [
+        "LICENSE",
+        "manifest.json",
+        "MirrorBackend.qml",
+        "Model.js",
+        "Panel.qml",
+        "bin/fit-window.sh",
+        "bin/hypr-window-rule.sh",
+        "bin/window-geometry.sh"
+      ],
+      "patches": [
+        "0001-manifest-declare-service-entrypoint.patch"
+      ]
+    }
+  ]
+}

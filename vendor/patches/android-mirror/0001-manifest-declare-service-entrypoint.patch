@@ -1,0 +1,26 @@
+Declare the mirror backend as a service entry point.
+
+Upstream ships MirrorBackend.qml only as Panel.qml's private engine, so nothing
+else can host it. OmaHub loads the same engine to render the device list inside
+its Phone tab; without a service entry point the shell will not load it at all.
+
+Purely additive: a plugin running standalone behaves exactly as before.
+Proposed upstream; drop this patch once it lands.
+
+--- a/manifest.json
++++ b/manifest.json
+@@ -7,10 +7,12 @@
+   "license": "MIT",
+   "description": "Mirror and control your Android phone from the Omarchy bar: USB or Wi-Fi, keyboard and mouse, low latency, no root. A native panel over adb + scrcpy.",
+   "kinds": [
+-    "bar-widget"
++    "bar-widget",
++    "service"
+   ],
+   "entryPoints": {
+-    "barWidget": "Panel.qml"
++    "barWidget": "Panel.qml",
++    "service": "MirrorBackend.qml"
+   },
+   "barWidget": {
+     "displayName": "Android Mirror",

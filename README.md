@@ -43,15 +43,13 @@ Install the optional engines from their upstream projects:
 omarchy plugin add https://github.com/ax1g/quickshell-screentime-plugin.git --enable --yes
 omarchy plugin add https://github.com/jitendradara12/omaconnect.git --enable --yes
 omarchy plugin add https://github.com/ayandexyz/omarchy-android-mirror.git --enable --yes
+omarchy plugin add https://github.com/jfg96/omarchy-nearby --enable --yes
 ```
 
-Nearby uses its own release installer because it includes a versioned helper:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/jfg96/omarchy-nearby/main/install.sh \
-  -o /tmp/omarchy-nearby-install.sh
-bash /tmp/omarchy-nearby-install.sh
-```
+Nearby ships a versioned helper binary. Its plugin fetches that helper on first
+enable and checks it against the size and SHA256 pinned in the plugin's own
+`helper-release.env`, so nothing here downloads or executes anything on its
+behalf.
 
 Open each integration tab in the Hub and choose its setup action. The Hub
 moves that plugin's settings into its own entry and disables the duplicate bar
