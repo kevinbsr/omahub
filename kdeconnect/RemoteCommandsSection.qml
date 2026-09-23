@@ -46,6 +46,7 @@ Column {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Style.space(6)
                 Text {
+                  textFormat: Text.PlainText
                     text: panel.commandsExpanded ? "󰅀" : "󰅂"
                     color: root.foreground
                     font.family: root.fontFamily
@@ -78,6 +79,7 @@ Column {
         width: parent.width
         spacing: Style.space(6)
         Text {
+          textFormat: Text.PlainText
             visible: !!root.service && root.service.commandsLoading
             text: "Loading commands..."
             color: Qt.darker(root.foreground, 1.4)
@@ -85,6 +87,7 @@ Column {
             font.pixelSize: Style.font.bodySmall
         }
         Text {
+          textFormat: Text.PlainText
             visible: !!root.service && !root.service.commandsLoading && root.service.remoteCommands.length === 0
             text: "No remote commands configured"
             color: Qt.darker(root.foreground, 1.4)
@@ -113,6 +116,7 @@ Column {
                     onClicked: if (root.service && root.device) root.service.executeRemoteCommand(root.device.id, modelData.key)
                 }
                 Text {
+                  textFormat: Text.PlainText
                     id: cmdBtnText
                     anchors.left: parent.left
                     anchors.right: parent.right

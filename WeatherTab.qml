@@ -65,6 +65,7 @@ Item {
       anchors.verticalCenter: parent.verticalCenter
       spacing: Style.space(6)
       Text {
+        textFormat: Text.PlainText
         width: parent.width
         text: metric.label
         elide: Text.ElideRight
@@ -76,6 +77,7 @@ Item {
         width: parent.width
         height: Math.max(valueLabel.implicitHeight, valueIcon.implicitHeight)
         Text {
+          textFormat: Text.PlainText
           id: valueLabel
           anchors.left: parent.left
           anchors.right: valueIcon.left
@@ -88,6 +90,7 @@ Item {
           font.pixelSize: Style.font.title
         }
         Text {
+          textFormat: Text.PlainText
           id: valueIcon
           anchors.right: parent.right
           anchors.verticalCenter: parent.verticalCenter
@@ -109,6 +112,7 @@ Item {
       width: parent.width
       height: Style.space(36)
       Text {
+        textFormat: Text.PlainText
         anchors.left: parent.left
         anchors.right: actions.left
         anchors.rightMargin: Style.space(12)
@@ -179,6 +183,7 @@ Item {
         }
       }
       Text {
+        textFormat: Text.PlainText
         width: parent.width
         text: !root.weather ? "" : root.weather.locationError || (root.weather.savingLocation ? "Saving city and loading weather…"
           : root.weather.searchingLocation ? "Searching cities…"
@@ -209,8 +214,8 @@ Item {
             y: Style.space(8)
             width: parent.width - Style.space(24)
             spacing: Style.space(3)
-            Text { width: parent.width; text: modelData.name; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body }
-            Text { width: parent.width; text: modelData.description; elide: Text.ElideRight; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+            Text { textFormat: Text.PlainText; width: parent.width; text: modelData.name; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body }
+            Text { textFormat: Text.PlainText; width: parent.width; text: modelData.description; elide: Text.ElideRight; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
           }
           MouseArea {
             anchors.fill: parent
@@ -247,10 +252,11 @@ Item {
         x: Style.space(12)
         y: Style.space(8)
         spacing: Style.space(4)
-        Text { text: "CURRENT CONDITIONS"; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+        Text { textFormat: Text.PlainText; text: "CURRENT CONDITIONS"; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
         Row {
           spacing: Style.space(12)
           Text {
+            textFormat: Text.PlainText
             text: root.weather && root.weather.current ? root.weather.reportTempNum + root.weather.tempUnit : "—"
             color: root.foreground
             font.family: root.fontFamily
@@ -258,6 +264,7 @@ Item {
             font.weight: Font.Medium
           }
           Text {
+            textFormat: Text.PlainText
             anchors.verticalCenter: parent.verticalCenter
             text: root.weather && root.weather.current ? root.weather.label : "—"
             color: root.foreground
@@ -271,8 +278,9 @@ Item {
         y: Style.space(8)
         width: (parent.width - Style.space(16)) / 3 - Style.space(24)
         spacing: Style.space(6)
-        Text { text: "TODAY · PRECIP."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+        Text { textFormat: Text.PlainText; text: "TODAY · PRECIP."; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
         Text {
+          textFormat: Text.PlainText
           width: parent.width
           text: WeatherModel.dailyValue(root.todayExtras.precipProbability, "%")
             + " · " + WeatherModel.dailyValue(root.todayExtras.rainMm, " mm", 1)
@@ -352,6 +360,7 @@ Item {
       }
     }
     Text {
+      textFormat: Text.PlainText
       width: parent.width
       text: !root.weather ? "Weather unavailable."
         : root.weather.refreshing ? (root.weather.current ? "Updating weather…" : "Loading weather…")

@@ -51,6 +51,7 @@ Column {
                 spacing: Style.space(2)
 
                 Text {
+                  textFormat: Text.PlainText
                     text: root.device ? root.deviceName : "KDE Connect"
                     color: root.foreground
                     font.family: root.fontFamily
@@ -61,6 +62,7 @@ Column {
                 }
 
                 Text {
+                  textFormat: Text.PlainText
                     width: parent.width
                     text: {
                         if (!root.service) return "Service unavailable"
@@ -80,6 +82,7 @@ Column {
                     spacing: Style.space(6)
 
                     Text {
+                      textFormat: Text.PlainText
                         text: root.service && root.device ? ((root.device.capabilities && root.device.capabilities.battery) ? root.service.deviceBatteryIcon(root.device) : root.service.deviceNetworkIcon(root.device)) : ""
                         color: (root.device && root.device.capabilities && root.device.capabilities.battery && root.device.battery >= 0 && root.device.battery <= 20 && !(root.device.isCharging || root.device.charging))
                             ? Color.urgent
@@ -90,6 +93,7 @@ Column {
                     }
 
                     Text {
+                      textFormat: Text.PlainText
                         text: root.service ? root.service.deviceBatteryText(root.device) : ""
                         color: (root.device && root.device.battery >= 0 && root.device.battery <= 20 && !(root.device.isCharging || root.device.charging))
                             ? Color.urgent
@@ -115,6 +119,7 @@ Column {
             : Style.hoverFillFor(root.foreground, Color.accent)
 
         Text {
+          textFormat: Text.PlainText
             id: bannerText
             anchors.left: parent.left
             anchors.right: dismissButton.left
@@ -153,6 +158,7 @@ Column {
             }
 
             Text {
+              textFormat: Text.PlainText
                 anchors.centerIn: parent
                 text: "✕"
                 color: ((root.service && root.service.actionError) || (root.panel && root.panel.composerError)) ? Color.urgent : root.foreground
@@ -211,6 +217,7 @@ Column {
                     spacing: Style.space(6)
 
                     Text {
+                      textFormat: Text.PlainText
                         id: statusText
                         text: !modelData.paired ? "" : (!modelData.reachable ? "Offline" : "●")
                         color: modelData.paired && modelData.reachable ? Color.accent : Qt.darker(root.foreground, 1.5)
@@ -229,6 +236,7 @@ Column {
                             visible: isUnpairConfirming
                             spacing: Style.space(4)
                             Text {
+                              textFormat: Text.PlainText
                                 text: "Confirm?"
                                 color: Color.urgent
                                 font.family: root.fontFamily
@@ -295,6 +303,7 @@ Column {
                 }
 
                 Text {
+                  textFormat: Text.PlainText
                     id: nameText
                     anchors.left: parent.left
                     anchors.right: rightActionItem.left
@@ -316,6 +325,7 @@ Column {
         width: parent.width
 
         Text {
+          textFormat: Text.PlainText
             text: {
                 if (root.service && root.service.scanning) return "Scanning..."
                 if (root.service && root.service.discoveryState === "not_installed") return "Required packages missing"
@@ -332,6 +342,7 @@ Column {
             spacing: Style.space(6)
 
             Text {
+              textFormat: Text.PlainText
                 text: "kdeconnect needed"
                 color: Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily
@@ -352,6 +363,7 @@ Column {
             spacing: Style.space(6)
 
             Text {
+              textFormat: Text.PlainText
                 text: "daemon not running"
                 color: Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily
@@ -372,6 +384,7 @@ Column {
             spacing: Style.space(6)
 
             Text {
+              textFormat: Text.PlainText
                 text: "Firewall blocking?"
                 color: Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily

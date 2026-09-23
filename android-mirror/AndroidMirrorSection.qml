@@ -46,6 +46,7 @@ Column {
   // way to discover and enable this from here.
 
   Text {
+    textFormat: Text.PlainText
     text: "ANDROID MIRROR"
     color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.6)
     font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true; font.letterSpacing: 1
@@ -64,6 +65,7 @@ Column {
     spacing: Style.spacing.xs
 
     Text {
+      textFormat: Text.PlainText
       width: parent.width
       text: root.standalonePanel
         ? "adb or scrcpy is missing. Open the full panel to install them."
@@ -83,6 +85,7 @@ Column {
   }
 
   Text {
+    textFormat: Text.PlainText
     visible: !root.toolsMissing && root.devices.length === 0
     width: parent.width
     text: root.loading && !root.hasResult ? "Looking for phones…"
@@ -111,6 +114,7 @@ Column {
         anchors.rightMargin: Style.spacing.xs
         anchors.verticalCenter: parent.verticalCenter
         Text {
+          textFormat: Text.PlainText
           width: parent.width
           text: MirrorModel.deviceTitle(row.modelData)
           color: row.modelData.ready ? root.foreground : root.dim
@@ -118,6 +122,7 @@ Column {
           font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.weight: Font.Medium
         }
         Text {
+          textFormat: Text.PlainText
           width: parent.width
           text: MirrorModel.deviceSubtitle(row.modelData)
           color: row.modelData.ready ? root.dim : Color.urgent
@@ -161,6 +166,7 @@ Column {
   }
 
   Text {
+    textFormat: Text.PlainText
     visible: !!root.backend && root.standalonePanel
     text: "Pair a new phone, or change settings, in the full panel ›"
     color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.55)

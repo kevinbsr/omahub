@@ -332,6 +332,7 @@ Item {
         onClicked: root.engine.startHelperUpdate()
       }
       Text {
+        textFormat: Text.PlainText
         width: parent.width
         text: root.engine ? root.engine.helperUpdateError || root.engine.helperUpdateStatus : ""
         visible: text !== ""
@@ -363,7 +364,7 @@ Item {
     Column {
       visible: root.viewState === "pin"; width: parent.width; spacing: Style.space(8)
       PanelSectionHeader { text: "RECEIVER PIN"; foreground: root.foreground; fontFamily: root.fontFamily }
-      Text { width: parent.width; text: "This receiver requires a PIN"; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.body }
+      Text { textFormat: Text.PlainText; width: parent.width; text: "This receiver requires a PIN"; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.body }
       TextField {
         id: pinInput; width: parent.width; password: true; placeholderText: "PIN"; maximumLength: 32; foreground: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body
         inputMethodHints: Qt.ImhDigitsOnly
@@ -371,7 +372,7 @@ Item {
         onAccepted: root.retryWithPin()
         Keys.onPressed: function(event) { if (event.key === Qt.Key_Escape) { root.cancelPin(); event.accepted = true } }
       }
-      Text { visible: root.pinError !== ""; width: parent.width; text: root.pinError; color: root.urgent; font.family: root.fontFamily; font.pixelSize: Style.font.body }
+      Text { textFormat: Text.PlainText; visible: root.pinError !== ""; width: parent.width; text: root.pinError; color: root.urgent; font.family: root.fontFamily; font.pixelSize: Style.font.body }
       Row { width: parent.width; spacing: Style.space(8)
         Button { width: (parent.width - parent.spacing) / 2; text: "Cancel"; bordered: true; foreground: root.dim; onClicked: root.cancelPin() }
         Button { width: (parent.width - parent.spacing) / 2; text: "Retry"; bordered: true; foreground: root.foreground; onClicked: root.retryWithPin() }
@@ -382,7 +383,7 @@ Item {
       visible: root.viewState === "incoming" && root.incoming; width: parent.width; spacing: Style.space(8)
       Text { width: parent.width; textFormat: Text.PlainText; text: root.incoming ? root.incoming.sender + " wants to send" : ""; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.title; font.bold: true }
       Text { width: parent.width; textFormat: Text.PlainText; text: root.incoming ? Model.incomingSummary(root.incoming.files) + " · " + Model.formatBytes(root.incoming.total) : ""; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.body; elide: Text.ElideRight }
-      Text { visible: root.incomingQueue.length > 1; width: parent.width; text: (root.incomingQueue.length - 1) + (root.incomingQueue.length === 2 ? " more request" : " more requests"); color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.body }
+      Text { textFormat: Text.PlainText; visible: root.incomingQueue.length > 1; width: parent.width; text: (root.incomingQueue.length - 1) + (root.incomingQueue.length === 2 ? " more request" : " more requests"); color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.body }
       Row { width: parent.width; spacing: Style.space(8)
         Button { width: (parent.width - parent.spacing) / 2; text: "Decline"; foreground: root.urgent; bordered: true; hasCursor: root.cursorActive && root.selectedIndex === 0; onClicked: root.declineIncoming() }
         Button { width: (parent.width - parent.spacing) / 2; text: "Accept"; foreground: root.foreground; bordered: true; hasCursor: root.cursorActive && root.selectedIndex === 1; onClicked: root.acceptIncoming() }
@@ -394,7 +395,7 @@ Item {
       PanelSectionHeader { text: root.viewState === "sending" ? "SENDING" : "RECEIVING"; foreground: root.foreground; fontFamily: root.fontFamily }
       Text { width: parent.width; textFormat: Text.PlainText; text: root.transferName; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.title; font.bold: true; elide: Text.ElideMiddle }
       Rectangle { width: parent.width; height: Style.space(4); radius: Math.min(height / 2, Style.cornerRadius); color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.38); Rectangle { width: parent.width * Math.max(0, Math.min(1, root.progress)); height: parent.height; radius: parent.radius; color: root.foreground; Behavior on width { NumberAnimation { duration: 120 } } } }
-      Text { text: Math.round(root.progress * 100) + "% · " + (root.viewState === "sending" ? "to " : "from ") + root.transferPeer; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.body }
+      Text { textFormat: Text.PlainText; text: Math.round(root.progress * 100) + "% · " + (root.viewState === "sending" ? "to " : "from ") + root.transferPeer; color: root.dim; font.family: root.fontFamily; font.pixelSize: Style.font.body }
       Button { visible: root.viewState === "sending"; text: "Cancel"; bordered: true; foreground: root.urgent; hasCursor: root.cursorActive; onClicked: root.cancelOutgoing() }
     }
 

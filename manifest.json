@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "kevinbsr.omahub",
   "name": "Hub",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": "Kevin Benevides",
   "description": "Clock and weather on the bar; a unified hub for calendar, media, weather, screen time, phone, nearby sharing and system monitoring",
   "kinds": [

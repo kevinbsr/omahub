@@ -427,6 +427,7 @@ Panel {
               color: Color.accent
             }
             Text {
+              textFormat: Text.PlainText
               id: navIcon
               anchors.left: parent.left
               anchors.leftMargin: Style.space(14)
@@ -438,6 +439,7 @@ Panel {
               font.pixelSize: Style.font.icon
             }
             Text {
+              textFormat: Text.PlainText
               anchors.left: navIcon.right
               anchors.leftMargin: Style.space(8)
               anchors.right: parent.right

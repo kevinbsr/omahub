@@ -130,9 +130,9 @@ Item {
       anchors.left: parent.left; anchors.right: parent.right
       anchors.leftMargin: Style.space(12); anchors.rightMargin: Style.space(12)
       anchors.verticalCenter: parent.verticalCenter; spacing: Style.space(1)
-      Text { width: parent.width; text: card.label; elide: Text.ElideRight; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.62); font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-      Text { width: parent.width; text: card.value; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.title; font.weight: Font.DemiBold }
-      Text { width: parent.width; text: card.detail; elide: Text.ElideRight; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.58); font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+      Text { textFormat: Text.PlainText; width: parent.width; text: card.label; elide: Text.ElideRight; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.62); font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+      Text { textFormat: Text.PlainText; width: parent.width; text: card.value; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.title; font.weight: Font.DemiBold }
+      Text { textFormat: Text.PlainText; width: parent.width; text: card.detail; elide: Text.ElideRight; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.58); font.family: root.fontFamily; font.pixelSize: Style.font.caption }
     }
     MouseArea {
       id: cardMouse; anchors.fill: parent; enabled: card.dayKey !== ""; hoverEnabled: enabled
@@ -149,6 +149,7 @@ Item {
     Item {
       width: parent.width; height: Style.space(36)
       Text {
+        textFormat: Text.PlainText
         anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
         text: "Screen time"; color: root.foreground; font.family: root.fontFamily
         font.pixelSize: Style.font.title; font.weight: Font.DemiBold
@@ -167,13 +168,14 @@ Item {
       Rectangle { width: Style.space(6); height: width; radius: width / 2; color: Color.accent; anchors.left: parent.left; anchors.leftMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter }
       Column {
         anchors.left: parent.left; anchors.leftMargin: Style.space(28); anchors.right: activeTime.left; anchors.rightMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; spacing: Style.space(1)
-        Text { width: parent.width; text: "ACTIVE NOW"; elide: Text.ElideRight; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.6); font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true; font.letterSpacing: 1 }
-        Text { width: parent.width; text: ScreenTimeModel.displayName(root.activeApp); elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body }
+        Text { textFormat: Text.PlainText; width: parent.width; text: "ACTIVE NOW"; elide: Text.ElideRight; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.6); font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true; font.letterSpacing: 1 }
+        Text { textFormat: Text.PlainText; width: parent.width; text: ScreenTimeModel.displayName(root.activeApp); elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body }
       }
-      Text { id: activeTime; anchors.right: parent.right; anchors.rightMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: ScreenTimeModel.fmt(root.activeElapsed); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+      Text { textFormat: Text.PlainText; id: activeTime; anchors.right: parent.right; anchors.rightMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: ScreenTimeModel.fmt(root.activeElapsed); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
     }
 
     Text {
+      textFormat: Text.PlainText
       // Enabled-but-broken is its own state, and the one thing it must never
       // read as: turning tracking on again does nothing when it is already
       // on. See HubIntegrations.qml's screenTimeFailed.
@@ -184,6 +186,7 @@ Item {
       font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; wrapMode: Text.Wrap
     }
     Text {
+      textFormat: Text.PlainText
       visible: !root.serviceReady && !root.serviceFailed
       width: parent.width
       text: !root.service ? (trackerSetup.configuredEnabled ? "Starting activity tracking…" : "Enable activity tracking to collect focused-window time.") : "Loading history…"
@@ -210,8 +213,8 @@ Item {
       PanelActionButton { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; iconText: "‹"; tooltipText: "Previous day · Left"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.moveDay(-1) }
       Column {
         anchors.centerIn: parent; spacing: 0
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: root.selectedLabel; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: root.selectedDateLabel; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.55); font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+        Text { textFormat: Text.PlainText; anchors.horizontalCenter: parent.horizontalCenter; text: root.selectedLabel; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+        Text { textFormat: Text.PlainText; anchors.horizontalCenter: parent.horizontalCenter; text: root.selectedDateLabel; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.55); font.family: root.fontFamily; font.pixelSize: Style.font.caption }
       }
       PanelActionButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; iconText: "›"; enabled: root.selectedKey < root.todayKey; tooltipText: "Next day · Right"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.moveDay(1) }
     }
@@ -238,8 +241,8 @@ Item {
         }
         Column {
           anchors.centerIn: parent; width: parent.width * 0.62; spacing: Style.space(1)
-          Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: root.selectedLabel.toUpperCase(); elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
-          Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: ScreenTimeModel.fmt(root.selectedTotal); color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.68); font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+          Text { textFormat: Text.PlainText; width: parent.width; horizontalAlignment: Text.AlignHCenter; text: root.selectedLabel.toUpperCase(); elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption; font.bold: true }
+          Text { textFormat: Text.PlainText; width: parent.width; horizontalAlignment: Text.AlignHCenter; text: ScreenTimeModel.fmt(root.selectedTotal); color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.68); font.family: root.fontFamily; font.pixelSize: Style.font.caption }
         }
       }
       Column {
@@ -250,13 +253,14 @@ Item {
             required property var modelData; required property int index
             width: parent.width; implicitHeight: Math.max(nameText.implicitHeight, timeText.implicitHeight)
             Rectangle { width: Style.space(7); height: width; radius: width / 2; color: root.sliceColors[index] || Color.accent; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter }
-            Text { id: nameText; anchors.left: parent.left; anchors.leftMargin: Style.space(14); anchors.right: timeText.left; anchors.rightMargin: Style.space(8); anchors.verticalCenter: parent.verticalCenter; text: ScreenTimeModel.displayName(modelData.app); elide: Text.ElideRight; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.68); font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
-            Text { id: timeText; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: ScreenTimeModel.fmt(modelData.ms); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+            Text { textFormat: Text.PlainText; id: nameText; anchors.left: parent.left; anchors.leftMargin: Style.space(14); anchors.right: timeText.left; anchors.rightMargin: Style.space(8); anchors.verticalCenter: parent.verticalCenter; text: ScreenTimeModel.displayName(modelData.app); elide: Text.ElideRight; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.68); font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+            Text { textFormat: Text.PlainText; id: timeText; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: ScreenTimeModel.fmt(modelData.ms); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
           }
         }
       }
     }
     Text {
+      textFormat: Text.PlainText
       visible: root.serviceReady && root.apps.length === 0
       width: parent.width; text: "No focused-window activity recorded for " + root.selectedLabel.toLowerCase() + "."
       color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.62); font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; font.italic: true
@@ -282,7 +286,7 @@ Item {
               height: trendDay.modelData.ms <= 0 || root.weekMax <= 0 ? Style.space(2) : Math.max(Style.space(2), parent.height * Number(trendDay.modelData.ms) / root.weekMax)
             }
           }
-          Text { anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: Style.space(3); text: modelData.label; color: root.foreground; opacity: modelData.key === root.selectedKey || modelData.isToday ? 1 : 0.55; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+          Text { textFormat: Text.PlainText; anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: Style.space(3); text: modelData.label; color: root.foreground; opacity: modelData.key === root.selectedKey || modelData.isToday ? 1 : 0.55; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
           MouseArea { id: trendMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.selectDay(trendDay.modelData.key, false) }
           PanelToolTip { visible: trendMouse.containsMouse; text: root.formatKey(modelData.key, "dddd, MMM d") + " · " + ScreenTimeModel.fmt(modelData.ms); fontFamily: root.fontFamily }
         }
@@ -293,8 +297,8 @@ Item {
       visible: root.serviceReady
       width: parent.width; height: visible ? Style.space(44) : 0; radius: Style.cornerRadius
       color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.035)
-      Text { anchors.left: parent.left; anchors.leftMargin: Style.space(12); anchors.right: busiestText.left; anchors.rightMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: root.todayComparison; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
-      Text { id: busiestText; anchors.right: parent.right; anchors.rightMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: root.busiest.total > 0 ? "Peak: " + ScreenTimeModel.relativeDayLabel(root.busiest.key, root.todayKey) + " · " + ScreenTimeModel.fmt(root.busiest.total) : ""; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.62); font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+      Text { textFormat: Text.PlainText; anchors.left: parent.left; anchors.leftMargin: Style.space(12); anchors.right: busiestText.left; anchors.rightMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: root.todayComparison; elide: Text.ElideRight; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+      Text { textFormat: Text.PlainText; id: busiestText; anchors.right: parent.right; anchors.rightMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: root.busiest.total > 0 ? "Peak: " + ScreenTimeModel.relativeDayLabel(root.busiest.key, root.todayKey) + " · " + ScreenTimeModel.fmt(root.busiest.total) : ""; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.62); font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
     }
 
     Column {
@@ -312,8 +316,8 @@ Item {
             color: modelData.key === root.selectedKey ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
               : historyMouse.containsMouse ? Style.hoverFillFor(root.foreground, Color.accent)
               : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.025)
-            Text { anchors.left: parent.left; anchors.leftMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: root.formatKey(historyRow.modelData.key, "ddd, MMM d"); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
-            Text { anchors.right: parent.right; anchors.rightMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: ScreenTimeModel.fmt(historyRow.modelData.ms); color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.65); font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+            Text { textFormat: Text.PlainText; anchors.left: parent.left; anchors.leftMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: root.formatKey(historyRow.modelData.key, "ddd, MMM d"); color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
+            Text { textFormat: Text.PlainText; anchors.right: parent.right; anchors.rightMargin: Style.space(12); anchors.verticalCenter: parent.verticalCenter; text: ScreenTimeModel.fmt(historyRow.modelData.ms); color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.65); font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall }
             MouseArea { id: historyMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.selectDay(historyRow.modelData.key, true) }
           }
         }
@@ -321,6 +325,7 @@ Item {
     }
 
     Text {
+      textFormat: Text.PlainText
       visible: root.serviceReady; width: parent.width
       text: "Focused-window time · lock screen and idle periods are excluded"
       horizontalAlignment: Text.AlignHCenter; color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.48)

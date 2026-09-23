@@ -45,7 +45,10 @@ Item {
   readonly property string title: hasPlayer ? (activePlayer.trackTitle || "") : ""
   readonly property string artist: hasPlayer ? (activePlayer.trackArtist || "") : ""
   readonly property string album: hasPlayer && activePlayer.trackAlbum ? activePlayer.trackAlbum : ""
+  // Raw, off the bus, and not handed to anything that loads it. See
+  // ArtworkCache.qml for what the cover Image actually gets.
   readonly property string artUrl: hasPlayer && activePlayer.trackArtUrl ? activePlayer.trackArtUrl : ""
+  ArtworkCache { id: artwork; source: root.artUrl }
   readonly property string sourceName: hasPlayer ? String(activePlayer.identity || activePlayer.desktopEntry || "") : ""
 
   readonly property var playerWindow: MediaModel.windowForPlayer(activePlayer, ToplevelManager.toplevels.values)
@@ -446,15 +449,22 @@ Item {
               }
             }
 
+            // Never root.artUrl directly: ArtworkCache decides what the shell
+            // is allowed to load off the bus, and hands back a local file.
+            // sourceSize is the last bound in the chain -- whatever the file
+            // claims to be, this is the most it can cost decoded.
             Image {
               id: cover
               anchors.fill: parent
-              source: root.artUrl
+              source: artwork.ready
+              sourceSize.width: 512
+              sourceSize.height: 512
               asynchronous: true
               fillMode: Image.PreserveAspectFit
               visible: status === Image.Ready
             }
             Text {
+              textFormat: Text.PlainText
               anchors.centerIn: parent
               visible: cover.status !== Image.Ready
               text: "󰝚"
@@ -472,6 +482,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             spacing: Style.space(8)
             Text {
+              textFormat: Text.PlainText
               width: parent.width
               text: root.hasPlayer ? (root.playing ? "NOW PLAYING" : "PAUSED") : "YOUR MUSIC"
               color: root.playing ? Color.accent : root.dim
@@ -480,6 +491,7 @@ Item {
               font.letterSpacing: 1.2
             }
             Text {
+              textFormat: Text.PlainText
               width: parent.width
               text: root.title || (root.hasPlayer ? root.labelFor(root.activePlayer) : "Nothing playing")
               color: root.foreground
@@ -491,6 +503,7 @@ Item {
               elide: Text.ElideRight
             }
             Text {
+              textFormat: Text.PlainText
               width: parent.width
               text: root.artist || (!root.hasPlayer ? "Open a player to start listening." : "")
               visible: text !== ""
@@ -502,6 +515,7 @@ Item {
               elide: Text.ElideRight
             }
             Text {
+              textFormat: Text.PlainText
               width: parent.width
               text: root.album
               visible: text !== ""
@@ -511,6 +525,7 @@ Item {
               elide: Text.ElideRight
             }
             Text {
+              textFormat: Text.PlainText
               width: parent.width
               text: root.sourceName
               visible: text !== ""
@@ -551,6 +566,7 @@ Item {
             implicitHeight: elapsedText.implicitHeight
 
             Text {
+              textFormat: Text.PlainText
               id: elapsedText
               anchors.left: parent.left
               // While dragging, the number follows the knob rather than the
@@ -563,6 +579,7 @@ Item {
             }
 
             Text {
+              textFormat: Text.PlainText
               anchors.right: parent.right
               text: root.showRemaining
                 ? "−" + MediaModel.fmtTime(Math.max(0, root.duration - (seekBar.dragging ? seekBar.liveValue : root.elapsed)))
@@ -688,6 +705,7 @@ Item {
           implicitHeight: visible ? volumeSlider.implicitHeight : 0
 
           Text {
+            textFormat: Text.PlainText
             id: volumeIcon
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
@@ -712,6 +730,7 @@ Item {
           }
 
           Text {
+            textFormat: Text.PlainText
             id: volumePercent
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
@@ -811,6 +830,7 @@ Item {
               spacing: Style.space(8)
 
               Text {
+                textFormat: Text.PlainText
                 text: sourceEntry.player && sourceEntry.player.isPlaying ? "󰏤" : "󰐊"
                 color: root.foreground
                 font.family: root.fontFamily
@@ -826,6 +846,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
 
                 Text {
+                  textFormat: Text.PlainText
                   text: sourceEntry.sourceTitle
                   color: root.foreground
                   font.family: root.fontFamily
@@ -836,6 +857,7 @@ Item {
                 }
 
                 Text {
+                  textFormat: Text.PlainText
                   text: sourceEntry.sourceDetail
                   color: root.faint
                   font.family: root.fontFamily
@@ -849,6 +871,7 @@ Item {
               // Only a source with more than one stream has anything to
               // unfold, so the chevron is the count made visible.
               Text {
+                textFormat: Text.PlainText
                 visible: sourceEntry.expandable
                 anchors.verticalCenter: parent.verticalCenter
                 width: Style.space(18)
@@ -900,6 +923,7 @@ Item {
             implicitHeight: visible ? appVolumeSlider.implicitHeight : 0
 
             Text {
+              textFormat: Text.PlainText
               id: appVolumeIcon
               anchors.left: parent.left
               anchors.leftMargin: Style.space(26)
@@ -942,6 +966,7 @@ Item {
             }
 
             Text {
+              textFormat: Text.PlainText
               id: streamCount
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
@@ -975,6 +1000,7 @@ Item {
                 implicitHeight: streamSlider.implicitHeight
 
                 Text {
+                  textFormat: Text.PlainText
                   id: streamLabel
                   anchors.left: parent.left
                   anchors.leftMargin: Style.space(46)
@@ -987,6 +1013,7 @@ Item {
                 }
 
                 Text {
+                  textFormat: Text.PlainText
                   id: streamMute
                   anchors.left: streamLabel.right
                   anchors.leftMargin: Style.space(2)
@@ -1031,6 +1058,7 @@ Item {
                 }
 
                 Text {
+                  textFormat: Text.PlainText
                   id: streamPercent
                   anchors.right: parent.right
                   anchors.verticalCenter: parent.verticalCenter

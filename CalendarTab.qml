@@ -219,6 +219,7 @@ Item {
       width: parent.width
       height: Style.space(36)
       Text {
+        textFormat: Text.PlainText
         anchors.left: parent.left
         anchors.right: monthActions.left
         anchors.rightMargin: Style.space(12)
@@ -294,6 +295,7 @@ Item {
               : "transparent"
 
             Text {
+              textFormat: Text.PlainText
               anchors.centerIn: parent
               text: "W"
               color: weekStartMouse.containsMouse
@@ -329,6 +331,7 @@ Item {
             model: root.weekdays
 
             Text {
+              textFormat: Text.PlainText
               required property var modelData
               width: root.cellWidth
               height: Style.space(16)
@@ -352,6 +355,7 @@ Item {
             spacing: root.cellSpacing
 
             Text {
+              textFormat: Text.PlainText
               width: root.weekColumnWidth
               height: root.cellHeight
               horizontalAlignment: Text.AlignHCenter
@@ -398,6 +402,7 @@ Item {
                 border.color: Style.normalBorderFor(root.foreground, Color.accent)
 
                 Text {
+                  textFormat: Text.PlainText
                   anchors.centerIn: parent
                   text: modelData.day
                   color: dayCell.selected ? Color.accent : modelData.inMonth
@@ -437,6 +442,7 @@ Item {
         width: parent.width - copyActions.width - Style.space(36)
         spacing: Style.space(6)
         Text {
+          textFormat: Text.PlainText
           width: parent.width
           text: Qt.formatDate(root.selectedDate, "dddd · dd/MM/yyyy")
           elide: Text.ElideRight
@@ -445,6 +451,7 @@ Item {
           font.pixelSize: Style.font.body
         }
         Text {
+          textFormat: Text.PlainText
           width: parent.width
           text: root.copyError || root.relativeDate
           elide: Text.ElideRight
@@ -504,6 +511,7 @@ Item {
           spacing: Style.space(10)
 
           Text {
+            textFormat: Text.PlainText
             anchors.verticalCenter: parent.verticalCenter
             text: "BORN"
             color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.7)
@@ -525,6 +533,7 @@ Item {
           }
 
           Text {
+            textFormat: Text.PlainText
             anchors.verticalCenter: parent.verticalCenter
             leftPadding: Style.space(6)
             text: "LIVE TO"
@@ -548,6 +557,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           id: yearLabel
           visible: !root.editingLife
           anchors.left: parent.left
@@ -560,6 +570,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           id: yearPercent
           visible: !root.editingLife
           anchors.right: parent.right
@@ -609,6 +620,7 @@ Item {
         height: Math.max(lifeLabel.implicitHeight, Style.space(10))
 
         Text {
+          textFormat: Text.PlainText
           id: lifeLabel
           anchors.left: parent.left
           anchors.verticalCenter: parent.verticalCenter
@@ -620,6 +632,7 @@ Item {
         }
 
         Text {
+          textFormat: Text.PlainText
           id: lifePercent
           anchors.right: parent.right
           anchors.verticalCenter: parent.verticalCenter

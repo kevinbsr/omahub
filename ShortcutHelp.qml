@@ -68,6 +68,7 @@ Item {
     width: parent.width
     height: heading.implicitHeight + Style.space(24)
     Text {
+      textFormat: Text.PlainText
       id: heading
       anchors.left: parent.left
       anchors.right: closeHelp.left
@@ -130,6 +131,7 @@ Item {
               width: rows.width
               height: Math.max(keycap.implicitHeight, description.implicitHeight) + Style.space(8)
               Text {
+                textFormat: Text.PlainText
                 id: keycap
                 width: Style.space(132)
                 text: modelData[0]
@@ -140,6 +142,7 @@ Item {
                 wrapMode: Text.WordWrap
               }
               Text {
+                textFormat: Text.PlainText
                 id: description
                 anchors.left: keycap.right
                 anchors.leftMargin: Style.space(14)

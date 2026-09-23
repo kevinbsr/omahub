@@ -141,6 +141,23 @@ Item {
   readonly property string reportWind:      current ? (useImperial ? (current.windspeedMiles + " mph") : (current.windspeedKmph + " km/h")) : ""
   readonly property string reportHumidity:  current ? (current.humidity + "%") : ""
 
+  // Every remote body is bounded in bytes as well as in seconds. curl's own
+  // --max-filesize only refuses a response that declares its length, so the
+  // hard stop is `head -c`: at the cap the pipe closes and curl dies with it.
+  // A truncated body fails to parse and takes the existing retry path, which
+  // is the intended outcome -- a weather service that answers with a gigabyte
+  // is not one to keep in memory while deciding what to do about it.
+  //
+  // The bash script here is a fixed string; the URL arrives as a positional
+  // argument and is never interpolated into it, so a location query keeps
+  // being a string rather than becoming shell. --proto '=https' means a
+  // redirect cannot walk the fetch down to http or file.
+  function fetch(url, seconds, maxBytes) {
+    return ["bash", "-c",
+      'exec curl -fsS --proto "=https" --max-time "$2" --max-filesize "$3" -- "$1" | head -c "$3"',
+      "omahub-weather-fetch", String(url), String(seconds), String(maxBytes)]
+  }
+
   function refresh() {
     lastRefreshAttempt = Date.now()
     forecastFailed = false
@@ -183,7 +200,7 @@ Item {
       + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day"
       + "&forecast_days=4"
       + "&timezone=auto"
-    dailyForecastProc.command = ["curl", "-fsS", "--max-time", "5", url]
+    dailyForecastProc.command = root.fetch(url, 5, 262144)
     dailyForecastProc.running = true
   }
 
@@ -294,8 +311,9 @@ Item {
   function startGeocode() {
     if (!editingLocation || geocodePendingQuery.length < 2 || geocodeProc.running) return
     geocodeActiveQuery = geocodePendingQuery
-    geocodeProc.command = ["curl", "-fsS", "--max-time", "5",
-      "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(geocodeActiveQuery) + "&count=5&language=en&format=json"]
+    geocodeProc.command = root.fetch(
+      "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(geocodeActiveQuery) + "&count=5&language=en&format=json",
+      5, 65536)
     geocodeProc.running = true
   }
 
@@ -321,7 +339,7 @@ Item {
     id: forecastProc
     property string requestedLocation: ""
     onRunningChanged: if (running) requestedLocation = root.locationQuery
-    command: ["curl", "-fsS", "--max-time", "10", "https://wttr.in/" + root.locationQuery + "?format=j1"]
+    command: root.fetch("https://wttr.in/" + root.locationQuery + "?format=j1", 10, 524288)
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -485,7 +503,7 @@ Item {
 
   Process {
     id: locationProc
-    command: ["curl", "-fsS", "--max-time", "4", "https://wttr.in/?format=%l"]
+    command: root.fetch("https://wttr.in/?format=%l", 4, 4096)
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -498,7 +516,7 @@ Item {
 
   Process {
     id: ipLocationProc
-    command: ["curl", "-fsS", "--max-time", "5", "https://ipinfo.io/json"]
+    command: root.fetch("https://ipinfo.io/json", 5, 8192)
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {

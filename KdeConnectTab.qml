@@ -517,12 +517,14 @@ Item {
       width: parent.width
       spacing: Style.space(16)
       Text {
+        textFormat: Text.PlainText
         text: "Connect your phone"
         color: root.foreground
         font.family: root.fontFamily
         font.pixelSize: Style.font.title
       }
       Text {
+        textFormat: Text.PlainText
         width: parent.width
         text: phoneSetup.configuredEnabled ? "Loading your devices…" : "Enable phone integration, then open KDE Connect on your phone. Keep both devices on the same network to pair them."
         wrapMode: Text.WordWrap

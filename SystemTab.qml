@@ -99,15 +99,18 @@ Item {
       width: parent.width - metric.inset * 2
       spacing: Style.space(4)
       Text {
+        textFormat: Text.PlainText
         width: parent.width; text: metric.label; elide: Text.ElideRight
         color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.65)
         font.family: root.fontFamily; font.pixelSize: Style.font.caption
       }
       Text {
+        textFormat: Text.PlainText
         width: parent.width; text: metric.value; elide: Text.ElideRight
         color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.title
       }
       Text {
+        textFormat: Text.PlainText
         width: parent.width; text: metric.detail; elide: Text.ElideRight
         maximumLineCount: metric.multiline ? 2 : 1
         color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.65)
@@ -135,6 +138,7 @@ Item {
     Item {
       width: parent.width; height: Style.space(36)
       Text {
+        textFormat: Text.PlainText
         text: "System monitor"; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
         color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.title; font.weight: Font.DemiBold
       }
@@ -155,6 +159,7 @@ Item {
       }
     }
     Text {
+      textFormat: Text.PlainText
       visible: root.errorText !== ""; width: parent.width
       text: root.errorText + (root.loaded ? " Showing the last reading." : "")
       wrapMode: Text.Wrap; color: Color.urgent; font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall

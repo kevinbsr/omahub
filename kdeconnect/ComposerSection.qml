@@ -27,6 +27,7 @@ Column {
         spacing: Style.space(6)
 
         Text {
+          textFormat: Text.PlainText
             text: "Ping " + root.deviceName
             color: root.foreground
             font.family: root.fontFamily
@@ -83,6 +84,7 @@ Column {
         }
 
         Text {
+          textFormat: Text.PlainText
             visible: panel.activeComposer === "ping" && panel.composerError !== ""
             text: panel.composerError
             color: Color.urgent
@@ -97,6 +99,7 @@ Column {
         spacing: Style.space(6)
 
         Text {
+          textFormat: Text.PlainText
             text: "Share text or link with " + root.deviceName
             color: root.foreground
             font.family: root.fontFamily
@@ -153,6 +156,7 @@ Column {
         }
 
         Text {
+          textFormat: Text.PlainText
             visible: panel.activeComposer === "text" && panel.composerError !== ""
             text: panel.composerError
             color: Color.urgent

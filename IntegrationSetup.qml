@@ -39,6 +39,7 @@ Column {
   }
 
   Text {
+    textFormat: Text.PlainText
     width: parent.width
     visible: text !== ""
     text: root.configuredEnabled

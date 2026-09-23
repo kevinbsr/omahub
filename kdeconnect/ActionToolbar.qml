@@ -65,6 +65,7 @@ Column {
                 }
 
                 Text {
+                  textFormat: Text.PlainText
                     id: actionBtnText
                     anchors.centerIn: parent
                     text: parent.actionName

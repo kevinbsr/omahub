@@ -20,23 +20,31 @@ on:
     - cron: "17 6 * * *"
   workflow_dispatch:
 
+# Least privilege per job rather than for the whole workflow: only the daily
+# status job files the tracking issue, and verify has no business writing
+# anything. Third-party actions are pinned to a commit for the reason given in
+# ci.yml.
 permissions:
   contents: read
-  issues: write
 
 jobs:
   verify:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: tools/vendor-sync verify
 
   status:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Check upstream
         id: check
