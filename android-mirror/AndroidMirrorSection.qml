@@ -10,11 +10,21 @@ import "AndroidMirrorModel.js" as MirrorModel
 // Hub's own view onto it: the frequent action (mirror an already-known
 // phone) inline, the rare ones (pairing, settings, installing the tools)
 // behind a link to upstream's own panel, which already has them.
+//
+// That link is only offered when the standalone plugin is actually installed
+// (`standalonePanel`). With the Hub running its vendored engine and no such
+// plugin, there is no panel to open, so the one rare action that cannot wait
+// -- installing adb/scrcpy, without which nothing here works at all -- gets
+// a button of its own here, calling the same backend function the panel's
+// Install button calls. Pairing by address stays out: it is a two-field form
+// for a case a USB cable already solves, and the Wi-Fi button on a plugged-in
+// phone covers the path most people take.
 Column {
   id: root
 
   required property var hub
   property var backend: null
+  property bool standalonePanel: false
   property color foreground: Color.foreground
   property string fontFamily: Style.font.family
   readonly property color dim: Qt.darker(foreground, 1.55)
@@ -48,19 +58,37 @@ Column {
     foreground: root.foreground; fontFamily: root.fontFamily
   }
 
-  Text {
+  Column {
     visible: root.toolsMissing
     width: parent.width
-    text: "adb or scrcpy is missing. Open the full panel to install them."
-    color: Color.urgent
-    font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; wrapMode: Text.WordWrap
+    spacing: Style.spacing.xs
+
+    Text {
+      width: parent.width
+      text: root.standalonePanel
+        ? "adb or scrcpy is missing. Open the full panel to install them."
+        : "adb or scrcpy is missing. Mirroring needs both."
+      color: Color.urgent
+      font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; wrapMode: Text.WordWrap
+    }
+
+    Button {
+      visible: !root.standalonePanel
+      text: "Install"
+      iconText: "󰏔"
+      bordered: true
+      foreground: root.foreground; fontFamily: root.fontFamily
+      onClicked: if (root.backend) root.backend.installTools()
+    }
   }
 
   Text {
     visible: !root.toolsMissing && root.devices.length === 0
     width: parent.width
     text: root.loading && !root.hasResult ? "Looking for phones…"
-      : "Plug in a phone with USB debugging on, or pair over Wi-Fi in the full panel."
+      : root.standalonePanel
+        ? "Plug in a phone with USB debugging on, or pair over Wi-Fi in the full panel."
+        : "Plug in a phone with USB debugging on; the Wi-Fi button then lets you unplug it."
     color: root.dim
     font.family: root.fontFamily; font.pixelSize: Style.font.bodySmall; wrapMode: Text.WordWrap
   }
@@ -133,7 +161,7 @@ Column {
   }
 
   Text {
-    visible: !!root.backend
+    visible: !!root.backend && root.standalonePanel
     text: "Pair a new phone, or change settings, in the full panel ›"
     color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.55)
     font.family: root.fontFamily; font.pixelSize: Style.font.caption

@@ -10,6 +10,7 @@ Run the checks before opening a pull request:
 node --test tests/*.test.cjs
 python3 -B -m unittest discover -s tests -p 'test_*.py'
 python3 -m json.tool manifest.json >/dev/null
+tools/vendor-sync verify
 ```
 
 For shell testing, link the checkout into the local plugin directory and
@@ -20,6 +21,19 @@ ln -s "$PWD" ~/.config/omarchy/plugins/kevinbsr.omahub
 omarchy restart shell
 ```
 
-When updating vendored code, retain its copyright notice, record the upstream
-revision and describe local modifications in `kdeconnect/VENDORED.md`,
-`android-mirror/VENDORED.md`, or the source file header.
+## Vendored code
+
+Two different things here are called vendored, and they have different rules.
+
+**Engines under `vendor/`** are upstream's own code, running unchanged. Never
+edit a file there by hand: the tree is derived from `upstream@commit` plus the
+patches in `vendor/patches/`, and `tools/vendor-sync verify` rebuilds it and
+fails on any difference. A local change goes in a patch, with a header saying
+what it does, why, and when it can be deleted. Repin with
+`tools/vendor-sync update <engine>`; see `vendor/README.md`.
+
+**Views adapted from upstream** — `kdeconnect/`, `android-mirror/`, and the
+`*Model.js` files — are this repo's own code, written against upstream's
+behaviour. Retain the copyright notice, and record the upstream revision and
+the local modifications in `kdeconnect/VENDORED.md`, `android-mirror/VENDORED.md`,
+or the source file header.

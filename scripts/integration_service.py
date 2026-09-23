@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Host installed integration engines in the Hub without duplicate services."""
+"""Host the Hub's integration engines without duplicate services.
+
+Enabling one moves the standalone plugin's settings into the Hub's own entry
+and marks that plugin disabled, so the engine runs once. Engines the Hub
+carries itself (VENDORED) need nothing installed."""
 import argparse
 import copy
 import fcntl
@@ -11,30 +15,15 @@ import time
 
 ALLOWED = {"agx.screen-time", "omaconnect", "oma.nearby", "io.github.ayan-de.android-mirror"}
 
-# Plugins the Hub knows how to host as a service but that only ever declared a
-# UI kind, because nothing else was meant to load them. Enabling one of these
-# adds the missing kind/entryPoint to that plugin's OWN manifest.json first --
-# see android-mirror/VENDORED.md for why android-mirror needs this and the
-# upstream PR that would remove the need for it.
-MANIFEST_PATCHES = {
-    "io.github.ayan-de.android-mirror": {"kind": "service", "entryPoint": "MirrorBackend.qml"},
-}
+# Engines the Hub carries under vendor/ (pinned upstream + patches). These need
+# no separate install: enabling one only rewires shell.json. Anything else here
+# is hosted only if its own plugin is installed and declares a service entry
+# point -- Nearby, whose versioned helper binary belongs with its own plugin.
+VENDORED = {"agx.screen-time", "omaconnect", "io.github.ayan-de.android-mirror"}
 
 
-def patch_manifest_for_service(plugin_id, manifest_path, manifest):
-    patch = MANIFEST_PATCHES.get(plugin_id)
-    if not patch:
-        return False
-    if patch["kind"] in manifest.get("kinds", []) and manifest.get("entryPoints", {}).get("service"):
-        return False
-    updated = copy.deepcopy(manifest)
-    if patch["kind"] not in updated.setdefault("kinds", []):
-        updated["kinds"].append(patch["kind"])
-    updated.setdefault("entryPoints", {})["service"] = patch["entryPoint"]
-    manifest_path.write_text(json.dumps(updated, indent=2, ensure_ascii=False) + "\n")
-    manifest.clear()
-    manifest.update(updated)
-    return True
+def vendored(plugin_id):
+    return (Path(__file__).resolve().parents[1] / "vendor").is_dir() and plugin_id in VENDORED
 
 
 def entry_id(entry):
@@ -96,11 +85,9 @@ def main():
     args = parser.parse_args()
     plugin_dir = Path(__file__).resolve().parents[2] / args.plugin_id
     manifest_path = plugin_dir / "manifest.json"
-    installed = False
-    if manifest_path.exists():
+    installed = vendored(args.plugin_id)
+    if not installed and manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
-        if args.action == "enable":
-            patch_manifest_for_service(args.plugin_id, manifest_path, manifest)
         installed = "service" in manifest.get("kinds", []) and manifest.get("id") == args.plugin_id
     config_path = (Path.home() / ".config/omarchy/shell.json").resolve()
     if args.action == "status":
@@ -115,7 +102,7 @@ def main():
         print(json.dumps({"installed": installed, "enabled": enabled}))
         return
     if not installed:
-        raise ValueError("Install the integration from the Omarchy plugin manager first.")
+        raise ValueError("Install this integration from the Omarchy plugin manager first.")
     with config_path.with_name(".hub-services.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         for _ in range(3):

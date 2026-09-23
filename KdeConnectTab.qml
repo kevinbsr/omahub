@@ -578,6 +578,9 @@ Item {
       hub: root.hub
       backend: root.hub && root.hub.hubService && root.hub.hubService.integrations
         ? root.hub.hubService.integrations.mirror : null
+      // Only then does "the full panel" exist to send anyone to.
+      standalonePanel: !!(root.hub && root.hub.hubService && root.hub.hubService.integrations
+        && root.hub.hubService.integrations.mirrorPluginPresent)
       foreground: root.foreground
       fontFamily: root.fontFamily
     }

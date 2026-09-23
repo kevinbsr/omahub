@@ -26,10 +26,12 @@ character while bringing related controls into one consistent surface.
 - `curl`, `python3`, `wl-clipboard` and `btop`; these are present on a normal
   Omarchy installation or available from Arch repositories.
 
-Screen Time, Phone, Nearby and Android Mirror are optional integrations.
-Their tabs explain what is missing and provide a setup action when the
-corresponding plugin is installed. Android Mirror also needs `adb` and
-`scrcpy` on the host, installed by its own plugin.
+Screen Time, Phone, Nearby and Android Mirror are optional integrations, off
+until you turn them on. Three of them (Screen Time, Phone, Android Mirror) run
+on engines the Hub carries itself, so their tabs only ask for the system
+packages they drive — `kdeconnect` for Phone, `adb` and `scrcpy` for Android
+Mirror. Nearby needs its own plugin installed; its tab says so and links the
+command. Every tab names what is missing before offering to turn anything on.
 
 ## Install
 
@@ -37,28 +39,29 @@ corresponding plugin is installed. Android Mirror also needs `adb` and
 omarchy plugin add https://github.com/kevinbsr/omahub.git --enable --yes
 ```
 
-Install the optional engines from their upstream projects:
+That is the whole install. Screen Time, Phone and Android Mirror run on engines
+the Hub carries itself under `vendor/`, each pinned to an upstream commit with
+any local change kept as a patch (see `vendor/README.md`). Open the tab and turn
+the integration on; nothing else to fetch.
 
-```bash
-omarchy plugin add https://github.com/ax1g/quickshell-screentime-plugin.git --enable --yes
-omarchy plugin add https://github.com/jitendradara12/omaconnect.git --enable --yes
-omarchy plugin add https://github.com/ayandexyz/omarchy-android-mirror.git --enable --yes
-omarchy plugin add https://github.com/jfg96/omarchy-nearby --enable --yes
-```
+Two things still come from outside, because they cannot sensibly ship here:
 
-Nearby ships a versioned helper binary. Its plugin fetches that helper on first
-enable and checks it against the size and SHA256 pinned in the plugin's own
-`helper-release.env`, so nothing here downloads or executes anything on its
-behalf.
+- **Nearby**, whose versioned helper binary belongs with its own plugin, which
+  verifies it against a pinned size and SHA256:
 
-Open each integration tab in the Hub and choose its setup action. The Hub
-moves that plugin's settings into its own entry and disables the duplicate bar
-widget or service while retaining existing history, pairing and identity data.
+  ```bash
+  omarchy plugin add https://github.com/jfg96/omarchy-nearby --enable --yes
+  ```
 
-Android Mirror ships with no `service` entry point of its own, since its
-Panel.qml was never meant to be hosted elsewhere. The Hub's setup action adds
-one to that plugin's own `manifest.json` the first time it is enabled; see
-`android-mirror/VENDORED.md` for the exact patch and why it is needed.
+- **System packages** the engines drive: `kdeconnect` for Phone, `adb` and
+  `scrcpy` for Android Mirror, `btop` for the System page's shortcut. A plugin
+  cannot install those; each tab says which one is missing.
+
+If you already run one of these as a standalone plugin, that copy wins over the
+vendored one: it is the version you chose, and its settings stay where its own
+bar widget expects them. Turning the integration on moves that plugin's settings
+into the Hub's entry and disables its duplicate bar widget, keeping existing
+history, pairing and identity data.
 
 ## Remove
 
@@ -101,6 +104,8 @@ ClockModel.js      date maths, from omarchy.clock
 MediaModel.js      player ranking helpers, from omarchy.media
 WeatherModel.js    wttr/open-meteo parsing, from omarchy.weather
 ScreenTimeModel.js formatting and grouping, from agx.screen-time
+vendor/            upstream engines, pinned and patched — see vendor/README.md
+tools/vendor-sync  rebuild/verify/repin those engines
 ```
 
 The media page splits its controls in two on purpose. Transport — play,
@@ -162,25 +167,55 @@ controls. The shell keeps ownership of its built-in `media` IPC target, while
 the Hub exposes its source-aware controls through `kevinbsr.omahub.media`; this
 avoids an ambiguous handler when both services are loaded.
 
-`HubIntegrations.qml` loads one installed engine for Screen Time, Phone and
-Nearby inside the Hub service. Current Omarchy versions restrict
+`HubIntegrations.qml` loads one engine each for Screen Time, Phone, Nearby and
+Android Mirror inside the Hub service. Current Omarchy versions restrict
 `serviceFor()` to the calling plugin, so the pages read the Hub's own engine
 references instead of looking up other plugins' services.
 
-The dependencies must remain installed: `agx.screen-time` 1.5.0,
-`omaconnect` 1.4.0 and `oma.nearby` 1.1.2 were checked with this integration.
-Their service files, supporting scripts and data formats remain upstream;
-no external plugin source is patched. Updates to those engines should be
-checked against the Hub's copied views before distribution.
+Where that engine comes from is decided per integration, at load time:
+
+- If the standalone plugin is installed **and** its `manifest.json` declares a
+  service entry point, the Hub loads that file out of the installed plugin. It
+  is the copy the user chose, it may be newer than the Hub's pin, and its
+  settings already live where its own bar widget expects them.
+- Otherwise the Hub loads its own vendored copy from `vendor/`.
+
+The service path comes from the installed manifest rather than being assumed:
+`agx.screen-time` moved `Service.qml` to `qml/Service.qml` in a refactor, and
+the hardcoded path this used to be went looking for a file that no longer
+existed — the integration loaded silently to nothing, one QML warning, no error
+the panel could show. A manifest without a service entry point is treated as
+not usable, which is also how `io.github.ayan-de.android-mirror` reads: upstream
+ships `MirrorBackend.qml` as `Panel.qml`'s private engine and declares no
+service. The Hub used to add that entry to the plugin's own manifest the first
+time the integration was enabled — writing into someone else's installed plugin,
+undone by their next update. It no longer does: the vendored copy carries that
+one-line change as a patch (`vendor/patches/android-mirror/`), so nothing here
+edits a plugin it does not own, and an installed android-mirror simply keeps
+running its own way while the Hub uses its own engine.
+
+Vendored engines are pinned to an exact upstream commit and are never hand
+edited — `tools/vendor-sync verify` rebuilds each tree from `upstream@commit +
+patches` and fails on any difference, on every push. A daily job reports what
+upstream has added since the pin. See `vendor/README.md`.
+
+The vendored pins are screen-time 1.6.2, omaconnect 1.4.0 and android-mirror
+0.1.0; Nearby was checked against the installed `oma.nearby` 1.1.2, and the
+installed-plugin path was checked against `agx.screen-time` 1.5.0 as well, which
+is where the `qml/Service.qml` move came from. Engine data formats and
+supporting scripts remain upstream's; a repin should be checked against the
+Hub's copied views before distribution.
 
 `scripts/integration_service.py enable <id>` moves the selected integration's
 preferences into `kevinbsr.omahub.integrations`, removes its standalone service/bar
 entries, and marks its standalone plugin disabled. This gives the engine a
 single owner, preserving the original tracking history, KDE Connect pairing
-and Nearby identity. Re-enabling a standalone plugin makes the Hub relinquish
-its engine; do not enable both copies when configuring the desktop manually.
-The helper backs up shell.json, preserves unrelated entries and writes it
-atomically. Repeated activation is idempotent.
+and Nearby identity. For a vendored engine there may be no standalone plugin to
+disable at all, and the helper accepts that: it treats the three vendored ids as
+available whether or not the plugin directory exists. Re-enabling a standalone
+plugin makes the Hub relinquish its engine; do not enable both copies when
+configuring the desktop manually. The helper backs up shell.json, preserves
+unrelated entries and writes it atomically. Repeated activation is idempotent.
 
 The four Phone sections under `kdeconnect/` remain vendored; see
 `kdeconnect/VENDORED.md`. `NearbyTab.qml` keeps the file chooser and clipboard
@@ -381,8 +416,10 @@ Pages share a 480-unit preferred viewport, constrained to the monitor height;
 longer content scrolls without resizing the panel when switching tabs.
 
 Unavailable integrations offer a setup button backed by
-`scripts/integration_service.py`. Activation requires the corresponding plugin
-to be installed and moves its service into the Hub as described above. Nearby
+`scripts/integration_service.py`. For Screen Time, Phone and Android Mirror the
+engine is already here, so the button only turns the integration on (and hands
+ownership over from a standalone plugin if one happens to be installed). Nearby
+is the one that still requires its plugin to be installed first. Nearby
 also offers **Update Nearby** when its installed helper no longer satisfies
 the plugin's version requirement; the upstream updater verifies the release
 checksum before replacing the binary.

@@ -27,6 +27,47 @@
       "patches": [
         "0001-manifest-declare-service-entrypoint.patch"
       ]
+    },
+    {
+      "name": "screentime",
+      "upstream": "https://github.com/ax1g/quickshell-screentime-plugin",
+      "branch": "main",
+      "commit": "2c7b75abde55b23ee6d6e1356797c8f50f60b8a1",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 agx",
+      "include": [
+        "LICENSE",
+        "manifest.json",
+        "qml/Service.qml",
+        "js/Model.js",
+        "js/State.js",
+        "js/browser_aliases.json",
+        "python/resolve_app.py"
+      ],
+      "patches": []
+    },
+    {
+      "name": "omaconnect",
+      "upstream": "https://github.com/jitendradara12/omaconnect",
+      "branch": "main",
+      "commit": "3e4d99716560f0110012e28e148f8c4fe1b0cd21",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 OmaConnect contributors",
+      "include": [
+        "LICENSE",
+        "manifest.json",
+        "Service.qml",
+        "KdeConnectController.qml",
+        "scripts/discover_devices.sh",
+        "scripts/media_control.sh",
+        "scripts/open_app.sh",
+        "scripts/open_sms.sh",
+        "scripts/pick_file.sh",
+        "scripts/setup_firewall.sh",
+        "scripts/update_custom_address.sh",
+        "scripts/install_dependencies.sh"
+      ],
+      "patches": []
     }
   ]
 }

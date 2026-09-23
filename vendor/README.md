@@ -37,7 +37,18 @@ it can be deleted — usually "once it lands upstream".
 
 | Engine | Upstream | License | Local patches |
 |---|---|---|---|
+| `screentime` | [ax1g/quickshell-screentime-plugin](https://github.com/ax1g/quickshell-screentime-plugin) | MIT | none |
+| `omaconnect` | [jitendradara12/omaconnect](https://github.com/jitendradara12/omaconnect) | MIT | none |
 | `android-mirror` | [ayandexyz/omarchy-android-mirror](https://github.com/ayandexyz/omarchy-android-mirror) | MIT | 1 — declare the mirror backend as a service entry point |
+
+Only the engine is vendored, not the whole plugin: `include` in `vendor.json`
+lists the exact files, which is the service and the scripts and data it reads.
+Each upstream's bar widget and panel stay out — the Hub has its own views for
+those, and pulling them in would vendor a second copy of the UI it replaced.
+
+If the matching standalone plugin is installed and declares a service entry
+point, `HubIntegrations.qml` loads *that* instead of the copy here. The vendored
+tree is the floor, not a lock.
 
 Licenses and attribution stay with the vendored files (each tree keeps its own
 `LICENSE`), and `THIRD_PARTY_NOTICES.md` at the repo root lists them.

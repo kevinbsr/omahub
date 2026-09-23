@@ -1,7 +1,7 @@
 import importlib.util
 import json
+import pathlib
 from pathlib import Path
-import tempfile
 import unittest
 
 spec = importlib.util.spec_from_file_location("integration", Path(__file__).parents[1] / "scripts/integration_service.py")
@@ -61,39 +61,25 @@ class ServiceConfigTests(unittest.TestCase):
                          [{"id": "kevinbsr.omahub", "integrations": {"omaconnect": {}}}, "other"])
 
 
-class ManifestPatchTests(unittest.TestCase):
-    def test_adds_missing_service_kind_and_entry_point(self):
-        manifest = {"id": "io.github.ayan-de.android-mirror", "kinds": ["bar-widget"],
-                    "entryPoints": {"barWidget": "Panel.qml"}}
-        with tempfile.TemporaryDirectory() as tmp:
-            manifest_path = Path(tmp) / "manifest.json"
-            manifest_path.write_text(json.dumps(manifest))
-            changed = integration.patch_manifest_for_service("io.github.ayan-de.android-mirror", manifest_path, manifest)
-            self.assertTrue(changed)
-            self.assertEqual(manifest["kinds"], ["bar-widget", "service"])
-            self.assertEqual(manifest["entryPoints"]["service"], "MirrorBackend.qml")
-            on_disk = json.loads(manifest_path.read_text())
-            self.assertEqual(on_disk["kinds"], ["bar-widget", "service"])
+class VendoredTests(unittest.TestCase):
+    def test_vendored_engines_need_no_install(self):
+        for plugin in ("agx.screen-time", "omaconnect", "io.github.ayan-de.android-mirror"):
+            self.assertTrue(integration.vendored(plugin), plugin)
 
-    def test_idempotent_once_patched(self):
-        manifest = {"id": "io.github.ayan-de.android-mirror", "kinds": ["bar-widget", "service"],
-                    "entryPoints": {"barWidget": "Panel.qml", "service": "MirrorBackend.qml"}}
-        with tempfile.TemporaryDirectory() as tmp:
-            manifest_path = Path(tmp) / "manifest.json"
-            manifest_path.write_text(json.dumps(manifest))
-            before = manifest_path.read_text()
-            changed = integration.patch_manifest_for_service("io.github.ayan-de.android-mirror", manifest_path, manifest)
-            self.assertFalse(changed)
-            self.assertEqual(manifest_path.read_text(), before)
+    def test_nearby_is_not_vendored(self):
+        # Its versioned helper binary belongs with its own plugin, so Nearby is
+        # hosted only when that plugin is installed.
+        self.assertNotIn("oma.nearby", integration.VENDORED)
+        self.assertFalse(integration.vendored("oma.nearby"))
 
-    def test_leaves_unlisted_plugins_untouched(self):
-        manifest = {"id": "omaconnect", "kinds": ["bar-widget"]}
-        with tempfile.TemporaryDirectory() as tmp:
-            manifest_path = Path(tmp) / "manifest.json"
-            manifest_path.write_text(json.dumps(manifest))
-            changed = integration.patch_manifest_for_service("omaconnect", manifest_path, manifest)
-            self.assertFalse(changed)
-            self.assertEqual(manifest["kinds"], ["bar-widget"])
+    def test_every_vendored_engine_is_an_allowed_integration(self):
+        self.assertTrue(integration.VENDORED <= integration.ALLOWED)
+
+    def test_vendored_engines_have_a_pinned_tree(self):
+        vendor = pathlib.Path(__file__).parents[1] / "vendor"
+        pinned = {e["name"] for e in json.loads((vendor / "vendor.json").read_text())["engines"]}
+        for name in pinned:
+            self.assertTrue((vendor / name).is_dir(), name)
 
 
 if __name__ == "__main__":
