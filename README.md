@@ -4,6 +4,8 @@ A keyboard-first command center for Omarchy. One themed bar widget opens a
 single panel for calendar, media, weather, screen time, phone controls, nearby
 sharing, Android mirroring and system monitoring.
 
+![The Hub's bar widget above its Calendar page](preview.png)
+
 The Hub follows the active Omarchy theme for color, typography, borders,
 spacing and corner radius. It keeps the original shell's compact, practical
 character while bringing related controls into one consistent surface.
