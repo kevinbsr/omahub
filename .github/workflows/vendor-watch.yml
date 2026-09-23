@@ -70,6 +70,9 @@ jobs:
           BODY: ${{ steps.check.outputs.body }}
         run: |
           title="Vendored engines are behind upstream"
+          # gh refuses to create an issue with a label the repo does not have,
+          # and a fresh clone of this repo has none. Make it once, quietly.
+          gh label create vendor --color BFD4F2 --description "Vendored upstream engines" 2>/dev/null || true
           existing=$(gh issue list --state open --label vendor --search "$title in:title" --json number -q '.[0].number')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$BODY"
