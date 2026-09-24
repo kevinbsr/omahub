@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "kevinbsr.omahub",
-  "name": "Hub",
-  "version": "1.4.1",
+  "name": "OmaHub",
+  "version": "1.4.2",
   "author": "Kevin Benevides",
   "description": "Clock and weather on the bar; a unified hub for calendar, media, weather, screen time, phone, nearby sharing and system monitoring",
   "kinds": [
@@ -15,7 +15,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Hub",
+    "displayName": "OmaHub",
     "description": "Seven-page hub with sidebar navigation and keyboard shortcuts",
     "category": "Time",
     "allowMultiple": false
